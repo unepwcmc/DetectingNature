@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 project(DetectingNature)
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/..)
-set(CMAKE_CXX_FLAGS "-g -O2 -Wall -std=c++11")
-
+find_package(OpenMP REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
+
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/..)
+set(CMAKE_CXX_FLAGS "-g -O2 -Wall -std=c++11 ${OpenMP_CXX_FLAGS}")
 
 include_directories(${Boost_INCLUDE_DIRS})
 
