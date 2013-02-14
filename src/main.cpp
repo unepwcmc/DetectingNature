@@ -23,6 +23,16 @@ const cv::Ptr<cv::DescriptorMatcher> descriptor_matcher =
 	cv::DescriptorMatcher::create("FlannBased");
 
 
+// Clear the current line to allow clean overwriting
+string clear_line() {
+	stringstream ss;
+	ss << "\r";
+	for(int i = 0; i < 80; i++)
+		ss << " ";
+	return ss.str();
+}
+
+
 // Returns the list of the relative paths of every file inside a folder.
 pthvec list_files(string directory, bool recursive=false) {
 
@@ -49,20 +59,20 @@ pthvec list_files(string directory, bool recursive=false) {
 // Computes the codebook using the bag-of-words technique 
 cv::Mat compute_codebook(const string dataset,
 		const unsigned int codebook_size) {
-		
+	
+	cout << "Extracting Features:" << endl;
+	
 	// Initialize Cluster Trainer
 	cv::BOWKMeansTrainer codebook_trainer(codebook_size);
-
 
 	// Go trough all classes in the given dataset
 	pthvec filenames = list_files(dataset, true);
 	
-	#pragma omp parallel for
+	#pragma omp parallel for ordered
 	for(unsigned int i = 0 ; i < filenames.size(); i++) {
 		path img = filenames[i];
 		
 		// Load the image
-		cout << img.filename().string() << endl;
 		cv::Mat input = cv::imread(img.string(), CV_LOAD_IMAGE_GRAYSCALE);
 				
 		// Extract features
@@ -77,14 +87,31 @@ cv::Mat compute_codebook(const string dataset,
 		{
 	    	codebook_trainer.add(features);
 	    }
+	    
+	    // Show progress
+	    #pragma omp ordered
+		{
+			int percent = (i+1) * 100.0 / filenames.size();
+			cout << "\r  Processing file " << img.filename().string()
+				<< " - " << (i+1) << "/" << filenames.size()
+				<< " (" << percent << "%)";
+			cout.flush();
+		}
 	}
+	cout << endl;
 	
 	// Train the clusters
+	cout << "Computing Codebook:" << endl;
+	cout << "  Clustering " << codebook_trainer.descripotorsCount()
+		<< " descriptors";
+	cout.flush();
+
 	cv::Mat vocabulary = codebook_trainer.cluster();
-	//TODO Store vocabulary
 	
 	cv::FileStorage fs("vocab.xml", cv::FileStorage::WRITE);
 	fs << "vocabulary" << vocabulary;
+	
+	cout << endl;
 	
 	return vocabulary;
 }
@@ -94,29 +121,36 @@ cv::Mat compute_codebook(const string dataset,
 CvSVM train_classifier(vector<string> class_list,
 		map<string, cv::Mat> train_data) {
 		
-	// Train the classifier
-	cout << "Training started" << endl;
-	
+	cout << "Training the classifier:" << endl;
+
+	// Define samples and labels	
 	cv::Mat samples;
 	cv::Mat labels(0, 1, CV_32FC1);
 	cv::Mat class_labels;
 	
-	samples.push_back(train_data["manmade"]);
-	class_labels = cv::Mat::zeros(train_data["manmade"].rows, 1, CV_32FC1);
-	labels.push_back(class_labels);	
 	samples.push_back(train_data["natural"]);
-	class_labels = cv::Mat::ones(train_data["natural"].rows, 1, CV_32FC1);
+	class_labels = cv::Mat::zeros(train_data["natural"].rows, 1, CV_32FC1);
+	labels.push_back(class_labels);	
+	samples.push_back(train_data["manmade"]);
+	class_labels = cv::Mat::ones(train_data["manmade"].rows, 1, CV_32FC1);
 	labels.push_back(class_labels);	
 	
-	cout << "Samples: " << samples << endl;
-	cout << "Labels: " << labels << endl;
+	// Setup the classifier's parameters
+	CvSVMParams classifier_params;
+	classifier_params.svm_type = CvSVM::NU_SVC;
+	classifier_params.nu = 0.2;
+	classifier_params.kernel_type = CvSVM::RBF;
+	classifier_params.gamma = 10;
 	
-	//cv::Mat samples_32f; samples.convertTo(samples_32f, CV_32F);
+	// Train the classifier
 	CvSVM classifier;
-	classifier.train(samples, labels);
+	classifier.train(samples, labels, cv::Mat(), cv::Mat(), classifier_params);
 	
+	//TODO Save classifier
 	//cv::FileStorage fs("classifier.xml", cv::FileStorage::WRITE);
 	//fs << "classifier" << classifier;
+	
+	cout << clear_line() << "\r  Done" << endl;
 	
 	return classifier;
 }
@@ -126,6 +160,8 @@ CvSVM train_classifier(vector<string> class_list,
 CvSVM get_classifier(const string dataset,
 		const unsigned int num_training_imgs, const cv::Mat& vocabulary) {
 		
+	cout << "Calculating feature histograms:" << endl;
+	
 	// Get new descriptors for images
 	cv::BOWImgDescriptorExtractor bow_extractor(
 		descriptor_extractor, descriptor_matcher);
@@ -139,24 +175,23 @@ CvSVM get_classifier(const string dataset,
 	pthvec classes = list_files(dataset);
 	BOOST_FOREACH(path cls, classes) {
 		const string classname = cls.filename().string();
-		
-		cout << "Class: " << classname << endl;
-		
+		cout << "  Class: " << classname << endl;
+				
 		// Go trough each picture in the class
 		pthvec filenames = list_files(cls.string());
-		shuffle(filenames.begin(), filenames.end(),
-			std::default_random_engine(0));
+		//TODO Find a good way to shuffle the files
+		//shuffle(filenames.begin(), filenames.end(),
+		//	std::default_random_engine(0));
+			
+		const unsigned int class_num_images =
+			min(num_training_imgs, filenames.size());
 		
-		#pragma omp parallel for
-		for(unsigned int i = 0;
-				i < min(num_training_imgs, filenames.size()); i++) {
-				
+		#pragma omp parallel for ordered
+		for(unsigned int i = 0;	i < class_num_images; i++) {
 			path img = filenames[i];
 		
-			// Load the image
-			cv::Mat input = cv::imread(img.string(), CV_LOAD_IMAGE_GRAYSCALE);
-			
 			// Extract features
+			cv::Mat input = cv::imread(img.string(), CV_LOAD_IMAGE_GRAYSCALE);		
 			std::vector<cv::KeyPoint> keypoints;
 			features_detector->detect(input, keypoints);
 			
@@ -164,10 +199,8 @@ CvSVM get_classifier(const string dataset,
 			cv::Mat img_descriptor;
 		    bow_extractor.compute(input, keypoints, img_descriptor);
 		    
-		    # pragma omp critical
-		    {
-		    	cout << img.filename().string() << endl;
-		    	
+		    #pragma omp critical
+		    {	    	
 		    	// Create dataset if if doesn't exist
 		    	if(training_data.count(classname) == 0) {
 		    		training_data[classname].create(
@@ -178,7 +211,18 @@ CvSVM get_classifier(const string dataset,
 		    	// Add this image to the class dataset
 				training_data[classname].push_back(img_descriptor);
 			}
+			
+			// Show progress
+			#pragma omp ordered
+			{
+				int percent = (i+1) * 100.0 / class_num_images;
+				cout << "\r    Processing file " << img.filename().string()
+					<< " - " << (i+1) << "/" << class_num_images
+					<< " (" << percent << "%)";
+				cout.flush();
+			}
 		}
+		cout << endl;
 	}
 	
 	return train_classifier(class_list, training_data);
@@ -186,7 +230,9 @@ CvSVM get_classifier(const string dataset,
 
 
 void test_classifier(const string dataset, const CvSVM& classifier,
-		const cv::Mat& vocabulary) {
+		const cv::Mat& vocabulary, const unsigned int num_training_images) {
+	
+	cout << "Testing the classifier:" << endl;
 	
 	// Get new descriptors for images
 	cv::BOWImgDescriptorExtractor bow_extractor(
@@ -196,22 +242,24 @@ void test_classifier(const string dataset, const CvSVM& classifier,
 	
 	// Go trough all classes in the given dataset
 	pthvec classes = list_files(dataset);
-	BOOST_FOREACH(path cls, classes) {
+	for(unsigned int i = 0; i < classes.size(); i++) {
+		path cls = classes[i];
 		const string classname = cls.filename().string();
 		
-		cout << "Class: " << classname << endl;
+		cout << "  Class: " << classname << endl;
 		
 		// Go trough each picture in the class
 		pthvec filenames = list_files(cls.string());
 		
-		#pragma omp parallel for
-		for(unsigned int i = 0;	i < filenames.size(); i++) {
-			path img = filenames[i];
+		int correct_classifications_train = 0;
+		int correct_classifications_test = 0;
 		
-			// Load the image
-			cv::Mat input = cv::imread(img.string(), CV_LOAD_IMAGE_GRAYSCALE);
-			
+		#pragma omp parallel for ordered
+		for(unsigned int j = 0;	j < filenames.size(); j++) {
+			path img = filenames[j];
+		
 			// Extract features
+			cv::Mat input = cv::imread(img.string(), CV_LOAD_IMAGE_GRAYSCALE);
 			std::vector<cv::KeyPoint> keypoints;
 			features_detector->detect(input, keypoints);
 			
@@ -219,22 +267,55 @@ void test_classifier(const string dataset, const CvSVM& classifier,
 			cv::Mat img_descriptor;
 		    bow_extractor.compute(input, keypoints, img_descriptor);
 		    
-		    # pragma omp critical
+		    
+		    // Update results
+		    const unsigned int class_result =
+				classifier.predict(img_descriptor);
+			const float class_result_value =
+				classifier.predict(img_descriptor, true);	
+			
+	    	if(class_result == i) {
+	    		if(j < num_training_images)
+		    		correct_classifications_train++;
+		    	else
+		    		correct_classifications_test++;
+		    }
+		    
+		    // Show progress
+		    #pragma omp ordered
 		    {
-		    	cout << img.filename().string() << ": ";
+		    	int percent = (j+1) * 100.0 / filenames.size();
 		    	
-		    	cout << classifier.predict(img_descriptor) << endl;
+				cout << clear_line()
+					<< "\r    Testing file " << img.filename().string()
+					<< " - " << (j+1) << "/" << filenames.size()
+					<< " (" << percent << "%)"
+					<< " = Class " << class_result << " ("
+		    		<< class_result_value << ")";
+				cout.flush();
 			}
 		}
+		
+		// Determine the recognition and recall rates
+		int percent_recall =
+			correct_classifications_train * 100.0 / num_training_images;	
+		
+		int percent_recognition =
+			correct_classifications_test * 100.0 /
+			(filenames.size() - num_training_images);
+		
+		cout << clear_line()
+			<< "\r    Recall: " << percent_recall << "%" << endl;
+		cout << "    Recognition: " << percent_recognition << "%" << endl;
 	}
 }
 
 
 int main(int argc, char** argv) {
 	// Define algorithm parameters
-	const string dataset = "data/scene_categories";
-	const unsigned int codebook_size = 400;
-	const unsigned int num_training_images = 100;
+	const string dataset = "data/medium_scene_categories";
+	const unsigned int codebook_size = 200;
+	const unsigned int num_training_images = 20;
 	
 	// Handle the vocabulary creation or loading
 	cv::Mat vocabulary;
@@ -248,7 +329,7 @@ int main(int argc, char** argv) {
 	// Handle the classifier creation or loading
 	CvSVM classifier = get_classifier(dataset, num_training_images, vocabulary);
 	
-	test_classifier(dataset, classifier, vocabulary);
+	test_classifier(dataset, classifier, vocabulary, num_training_images);
 
 	return 0;
 }
