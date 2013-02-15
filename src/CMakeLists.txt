@@ -10,7 +10,7 @@ set(CMAKE_CXX_FLAGS "-g -O2 -Wall -std=c++11 ${OpenMP_CXX_FLAGS}")
 
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_executable(DetectingNature main.cpp)
+add_executable(DetectingNature DatasetManager.cpp main.cpp)
 
 target_link_libraries(DetectingNature ${OpenCV_LIBS})
 target_link_libraries(DetectingNature ${Boost_LIBRARIES})

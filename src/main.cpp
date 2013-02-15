@@ -12,7 +12,13 @@ using namespace std;
 #include <boost/assign/list_of.hpp>
 using namespace boost::filesystem;
 
+#include "DatasetManager.h"
+
 typedef vector<path> pthvec;
+
+
+DatasetManager datasetManager("data/scene_categories", 100);
+
 
 // Define descriptors to be used
 const cv::Ptr<cv::FeatureDetector> features_detector =
@@ -33,32 +39,8 @@ string clear_line() {
 }
 
 
-// Returns the list of the relative paths of every file inside a folder.
-pthvec list_files(string directory, bool recursive=false) {
-
-	path dir(directory);
-	pthvec filenames;
-		
-	if(!recursive) {
-		for(directory_iterator it(dir); it != directory_iterator(); it++) {
-			filenames.push_back(it->path().relative_path());
-		}
-	} else {
-		for(recursive_directory_iterator it(dir);
-			it != recursive_directory_iterator(); ++it) {
-
-			if(is_regular_file(it->path()))
-				filenames.push_back(it->path().relative_path());
-		}
-	}
-	
-	return filenames;
-}
-
-
 // Computes the codebook using the bag-of-words technique 
-cv::Mat compute_codebook(const string dataset,
-		const unsigned int codebook_size) {
+cv::Mat compute_codebook(const unsigned int codebook_size) {
 	
 	cout << "Extracting Features:" << endl;
 	
@@ -66,14 +48,17 @@ cv::Mat compute_codebook(const string dataset,
 	cv::BOWKMeansTrainer codebook_trainer(codebook_size);
 
 	// Go trough all classes in the given dataset
-	pthvec filenames = list_files(dataset, true);
+	const vector<string> filenames =
+		datasetManager.listFiles(DatasetManager::ALL);
 	
-	#pragma omp parallel for ordered
+	unsigned int totalProcessedImages = 0;
+	
+	#pragma omp parallel for
 	for(unsigned int i = 0 ; i < filenames.size(); i++) {
-		path img = filenames[i];
+		string img = filenames[i];
 		
 		// Load the image
-		cv::Mat input = cv::imread(img.string(), CV_LOAD_IMAGE_GRAYSCALE);
+		cv::Mat input = cv::imread(img, CV_LOAD_IMAGE_GRAYSCALE);
 				
 		// Extract features
 		std::vector<cv::KeyPoint> keypoints;
@@ -83,17 +68,16 @@ cv::Mat compute_codebook(const string dataset,
 		descriptor_extractor->compute(input, keypoints, features);
 		
 		// Train bag-of-words
-		#pragma omp critical 
+		#pragma omp critical
 		{
+			totalProcessedImages++;
+		
 	    	codebook_trainer.add(features);
-	    }
 	    
-	    // Show progress
-	    #pragma omp ordered
-		{
-			int percent = (i+1) * 100.0 / filenames.size();
-			cout << "\r  Processing file " << img.filename().string()
-				<< " - " << (i+1) << "/" << filenames.size()
+		    // Show progress
+			int percent = totalProcessedImages * 100.0 / filenames.size();
+			cout << "\r  Processing file " << DatasetManager::getFilename(img)
+				<< " - " << totalProcessedImages << "/" << filenames.size()
 				<< " (" << percent << "%)";
 			cout.flush();
 		}
@@ -157,8 +141,7 @@ CvSVM train_classifier(vector<string> class_list,
 
 
 // Transform and prepare the dataset to be trained
-CvSVM get_classifier(const string dataset,
-		const unsigned int num_training_imgs, const cv::Mat& vocabulary) {
+CvSVM get_classifier(const cv::Mat& vocabulary) {
 		
 	cout << "Calculating feature histograms:" << endl;
 	
@@ -172,26 +155,21 @@ CvSVM get_classifier(const string dataset,
 	map<string, cv::Mat> training_data;
 
 	// Go trough all classes in the given dataset
-	pthvec classes = list_files(dataset);
-	BOOST_FOREACH(path cls, classes) {
-		const string classname = cls.filename().string();
+	const vector<string> classes = datasetManager.listClasses();
+	BOOST_FOREACH(string classname, classes) {
 		cout << "  Class: " << classname << endl;
 				
-		// Go trough each picture in the class
-		pthvec filenames = list_files(cls.string());
-		//TODO Find a good way to shuffle the files
-		//shuffle(filenames.begin(), filenames.end(),
-		//	std::default_random_engine(0));
-			
-		const unsigned int class_num_images =
-			min(num_training_imgs, filenames.size());
+		// Go through each picture in the class
+		vector<string> filenames =
+			datasetManager.listFiles(DatasetManager::TRAIN, classname);
 		
-		#pragma omp parallel for ordered
-		for(unsigned int i = 0;	i < class_num_images; i++) {
-			path img = filenames[i];
+		unsigned int totalProcessedImages = 0;
+		#pragma omp parallel for
+		for(unsigned int i = 0;	i < filenames.size(); i++) {
+			string img = filenames[i];
 		
 			// Extract features
-			cv::Mat input = cv::imread(img.string(), CV_LOAD_IMAGE_GRAYSCALE);		
+			cv::Mat input = cv::imread(img, CV_LOAD_IMAGE_GRAYSCALE);		
 			std::vector<cv::KeyPoint> keypoints;
 			features_detector->detect(input, keypoints);
 			
@@ -200,7 +178,9 @@ CvSVM get_classifier(const string dataset,
 		    bow_extractor.compute(input, keypoints, img_descriptor);
 		    
 		    #pragma omp critical
-		    {	    	
+		    {	    
+			    totalProcessedImages++;
+			    
 		    	// Create dataset if if doesn't exist
 		    	if(training_data.count(classname) == 0) {
 		    		training_data[classname].create(
@@ -210,14 +190,12 @@ CvSVM get_classifier(const string dataset,
 		    	
 		    	// Add this image to the class dataset
 				training_data[classname].push_back(img_descriptor);
-			}
-			
-			// Show progress
-			#pragma omp ordered
-			{
-				int percent = (i+1) * 100.0 / class_num_images;
-				cout << "\r    Processing file " << img.filename().string()
-					<< " - " << (i+1) << "/" << class_num_images
+
+				// Show progress
+				int percent = totalProcessedImages * 100.0 / filenames.size();
+				cout << "\r    Processing file "
+					<< DatasetManager::getFilename(img)
+					<< " - " << totalProcessedImages << "/" << filenames.size()
 					<< " (" << percent << "%)";
 				cout.flush();
 			}
@@ -229,8 +207,8 @@ CvSVM get_classifier(const string dataset,
 }
 
 
-void test_classifier(const string dataset, const CvSVM& classifier,
-		const cv::Mat& vocabulary, const unsigned int num_training_images) {
+void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary,
+		const unsigned int num_training_images) {
 	
 	cout << "Testing the classifier:" << endl;
 	
@@ -241,25 +219,30 @@ void test_classifier(const string dataset, const CvSVM& classifier,
 	bow_extractor.setVocabulary(vocabulary);
 	
 	// Go trough all classes in the given dataset
-	pthvec classes = list_files(dataset);
+	vector<string> classes = datasetManager.listClasses();
 	for(unsigned int i = 0; i < classes.size(); i++) {
-		path cls = classes[i];
-		const string classname = cls.filename().string();
+		const string classname = classes[i];
 		
 		cout << "  Class: " << classname << endl;
 		
 		// Go trough each picture in the class
-		pthvec filenames = list_files(cls.string());
+		vector<string> filenames =
+			datasetManager.listFiles(DatasetManager::ALL, classname);
+		vector<string> filenames_train =
+			datasetManager.listFiles(DatasetManager::TRAIN, classname);
+		vector<string> filenames_test =
+			datasetManager.listFiles(DatasetManager::TEST, classname);
 		
-		int correct_classifications_train = 0;
-		int correct_classifications_test = 0;
+		unsigned int correct_classifications_train = 0;
+		unsigned int correct_classifications_test = 0;
 		
-		#pragma omp parallel for ordered
+		unsigned int totalProcessedImages = 0;
+		#pragma omp parallel for
 		for(unsigned int j = 0;	j < filenames.size(); j++) {
-			path img = filenames[j];
+			string img = filenames[j];
 		
 			// Extract features
-			cv::Mat input = cv::imread(img.string(), CV_LOAD_IMAGE_GRAYSCALE);
+			cv::Mat input = cv::imread(img, CV_LOAD_IMAGE_GRAYSCALE);
 			std::vector<cv::KeyPoint> keypoints;
 			features_detector->detect(input, keypoints);
 			
@@ -272,23 +255,27 @@ void test_classifier(const string dataset, const CvSVM& classifier,
 		    const unsigned int class_result =
 				classifier.predict(img_descriptor);
 			const float class_result_value =
-				classifier.predict(img_descriptor, true);	
+				classifier.predict(img_descriptor, true);
 			
 	    	if(class_result == i) {
-	    		if(j < num_training_images)
+	    		if(std::find(filenames_train.begin(),
+	    			filenames_train.end(), img) != filenames_train.end()) {
 		    		correct_classifications_train++;
-		    	else
+		    	} else {
 		    		correct_classifications_test++;
+		    	}
 		    }
 		    
 		    // Show progress
-		    #pragma omp ordered
+		    #pragma omp critical
 		    {
-		    	int percent = (j+1) * 100.0 / filenames.size();
+		    	totalProcessedImages++;
+		    	
+		    	int percent = totalProcessedImages * 100.0 / filenames.size();
 		    	
 				cout << clear_line()
-					<< "\r    Testing file " << img.filename().string()
-					<< " - " << (j+1) << "/" << filenames.size()
+					<< "\r    Testing file " << DatasetManager::getFilename(img)
+					<< " - " << totalProcessedImages << "/" << filenames.size()
 					<< " (" << percent << "%)"
 					<< " = Class " << class_result << " ("
 		    		<< class_result_value << ")";
@@ -298,11 +285,10 @@ void test_classifier(const string dataset, const CvSVM& classifier,
 		
 		// Determine the recognition and recall rates
 		int percent_recall =
-			correct_classifications_train * 100.0 / num_training_images;	
+			correct_classifications_train * 100.0 / filenames_train.size();	
 		
 		int percent_recognition =
-			correct_classifications_test * 100.0 /
-			(filenames.size() - num_training_images);
+			correct_classifications_test * 100.0 / filenames_test.size();
 		
 		cout << clear_line()
 			<< "\r    Recall: " << percent_recall << "%" << endl;
@@ -313,7 +299,6 @@ void test_classifier(const string dataset, const CvSVM& classifier,
 
 int main(int argc, char** argv) {
 	// Define algorithm parameters
-	const string dataset = "data/medium_scene_categories";
 	const unsigned int codebook_size = 200;
 	const unsigned int num_training_images = 20;
 	
@@ -323,13 +308,13 @@ int main(int argc, char** argv) {
 		cv::FileStorage fs("vocab.xml", cv::FileStorage::READ);
 		fs["vocabulary"] >> vocabulary;
 	} else {
-		vocabulary = compute_codebook(dataset, codebook_size);
+		vocabulary = compute_codebook(codebook_size);
 	}
 	
 	// Handle the classifier creation or loading
-	CvSVM classifier = get_classifier(dataset, num_training_images, vocabulary);
+	CvSVM classifier = get_classifier(vocabulary);
 	
-	test_classifier(dataset, classifier, vocabulary, num_training_images);
-
+	test_classifier(classifier, vocabulary, num_training_images);
+	
 	return 0;
 }
