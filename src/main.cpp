@@ -14,10 +14,7 @@ using namespace boost::filesystem;
 
 #include "DatasetManager.h"
 
-typedef vector<path> pthvec;
-
-
-DatasetManager datasetManager("data/scene_categories", 100);
+DatasetManager datasetManager("data/original_scene_categories", 100);
 
 
 // Define descriptors to be used
@@ -38,6 +35,13 @@ string clear_line() {
 	return ss.str();
 }
 
+string cleanFilename(string filename) {
+	replace(filename.begin(), filename.end(), '/', '-');
+	replace(filename.begin(), filename.end(), '.', '-');
+	
+	return filename;
+}
+
 
 // Computes the codebook using the bag-of-words technique 
 cv::Mat compute_codebook(const unsigned int codebook_size) {
@@ -49,7 +53,7 @@ cv::Mat compute_codebook(const unsigned int codebook_size) {
 
 	// Go trough all classes in the given dataset
 	const vector<string> filenames =
-		datasetManager.listFiles(DatasetManager::ALL);
+		datasetManager.listFiles(DatasetManager::TRAIN);
 	
 	unsigned int totalProcessedImages = 0;
 	
@@ -112,19 +116,20 @@ CvSVM train_classifier(vector<string> class_list,
 	cv::Mat labels(0, 1, CV_32FC1);
 	cv::Mat class_labels;
 	
-	samples.push_back(train_data["natural"]);
-	class_labels = cv::Mat::zeros(train_data["natural"].rows, 1, CV_32FC1);
-	labels.push_back(class_labels);	
-	samples.push_back(train_data["manmade"]);
-	class_labels = cv::Mat::ones(train_data["manmade"].rows, 1, CV_32FC1);
-	labels.push_back(class_labels);	
+	vector<string> classes = datasetManager.listClasses();
+	for(unsigned int i = 0; i < classes.size(); i++) {
+		string classname = classes[i];
+		samples.push_back(train_data[classname]);
+		class_labels = cv::Mat(train_data[classname].rows, 1, CV_32FC1, i);
+		labels.push_back(class_labels);
+	}
 	
 	// Setup the classifier's parameters
 	CvSVMParams classifier_params;
-	classifier_params.svm_type = CvSVM::NU_SVC;
-	classifier_params.nu = 0.2;
+	classifier_params.svm_type = CvSVM::C_SVC;
+	classifier_params.C = 1;
 	classifier_params.kernel_type = CvSVM::RBF;
-	classifier_params.gamma = 10;
+	classifier_params.gamma = 100;
 	
 	// Train the classifier
 	CvSVM classifier;
@@ -153,6 +158,8 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 	
 	vector<string> class_list;
 	map<string, cv::Mat> training_data;
+	
+	cv::FileStorage fs("histograms.xml", cv::FileStorage::READ);
 
 	// Go trough all classes in the given dataset
 	const vector<string> classes = datasetManager.listClasses();
@@ -169,19 +176,15 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 			string img = filenames[i];
 		
 			// Extract features
-			cv::Mat input = cv::imread(img, CV_LOAD_IMAGE_GRAYSCALE);		
-			std::vector<cv::KeyPoint> keypoints;
-			features_detector->detect(input, keypoints);
-			
-			// Compute image final descriptor
 			cv::Mat img_descriptor;
-		    bow_extractor.compute(input, keypoints, img_descriptor);
+			string imgName = cleanFilename(img);
+			fs[imgName] >> img_descriptor;
 		    
 		    #pragma omp critical
 		    {	    
 			    totalProcessedImages++;
 			    
-		    	// Create dataset if if doesn't exist
+		    	// Create dataset if it doesn't exist
 		    	if(training_data.count(classname) == 0) {
 		    		training_data[classname].create(
 						0, img_descriptor.cols, img_descriptor.type());
@@ -207,8 +210,7 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 }
 
 
-void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary,
-		const unsigned int num_training_images) {
+void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 	
 	cout << "Testing the classifier:" << endl;
 	
@@ -217,6 +219,8 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary,
 		descriptor_extractor, descriptor_matcher);
 		
 	bow_extractor.setVocabulary(vocabulary);
+	
+	cv::FileStorage fs("histograms.xml", cv::FileStorage::READ);
 	
 	// Go trough all classes in the given dataset
 	vector<string> classes = datasetManager.listClasses();
@@ -240,16 +244,10 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary,
 		#pragma omp parallel for
 		for(unsigned int j = 0;	j < filenames.size(); j++) {
 			string img = filenames[j];
-		
-			// Extract features
-			cv::Mat input = cv::imread(img, CV_LOAD_IMAGE_GRAYSCALE);
-			std::vector<cv::KeyPoint> keypoints;
-			features_detector->detect(input, keypoints);
 			
-			// Compute image final descriptor
 			cv::Mat img_descriptor;
-		    bow_extractor.compute(input, keypoints, img_descriptor);
-		    
+			string imgName = cleanFilename(img);
+			fs[imgName] >> img_descriptor;		    
 		    
 		    // Update results
 		    const unsigned int class_result =
@@ -296,11 +294,59 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary,
 	}
 }
 
+void generateDescriptorCache(const cv::Mat& vocabulary) {
+		
+	cout << "Generating descriptor cache:" << endl;
+	
+	// Get new descriptors for images
+	cv::BOWImgDescriptorExtractor bow_extractor(
+		descriptor_extractor, descriptor_matcher);
+		
+	bow_extractor.setVocabulary(vocabulary);
+	
+	// Go trough all classes in the given dataset
+	vector<string> filenames =
+		datasetManager.listFiles(DatasetManager::ALL);
+	
+	cv::FileStorage fs("histograms.xml", cv::FileStorage::WRITE);
+
+	unsigned int totalProcessedImages = 0;
+	#pragma omp parallel for
+	for(unsigned int i = 0;	i < filenames.size(); i++) {
+		string img = filenames[i];
+	
+		// Extract features
+		cv::Mat input = cv::imread(img, CV_LOAD_IMAGE_GRAYSCALE);
+		std::vector<cv::KeyPoint> keypoints;
+		features_detector->detect(input, keypoints);
+		
+		// Compute image final descriptor
+		cv::Mat img_descriptor;
+	    bow_extractor.compute(input, keypoints, img_descriptor);
+	    
+	    #pragma omp critical
+	    {	    
+		    totalProcessedImages++;
+		    
+		    string imgName = cleanFilename(img);		    
+			fs << imgName << img_descriptor;
+
+			// Show progress
+			int percent = totalProcessedImages * 100.0 / filenames.size();
+			cout << "\r    Processing file "
+				<< DatasetManager::getFilename(img)
+				<< " - " << totalProcessedImages << "/" << filenames.size()
+				<< " (" << percent << "%)";
+			cout.flush();
+		}
+	}
+	cout << endl;
+}
+
 
 int main(int argc, char** argv) {
 	// Define algorithm parameters
 	const unsigned int codebook_size = 200;
-	const unsigned int num_training_images = 20;
 	
 	// Handle the vocabulary creation or loading
 	cv::Mat vocabulary;
@@ -311,10 +357,14 @@ int main(int argc, char** argv) {
 		vocabulary = compute_codebook(codebook_size);
 	}
 	
+	if(!exists("histograms.xml")) {
+		generateDescriptorCache(vocabulary);
+	}
+	
 	// Handle the classifier creation or loading
 	CvSVM classifier = get_classifier(vocabulary);
 	
-	test_classifier(classifier, vocabulary, num_training_images);
+	test_classifier(classifier, vocabulary);
 	
 	return 0;
 }
