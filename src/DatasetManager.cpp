@@ -12,6 +12,7 @@ DatasetManager::DatasetManager(const string datasetPath,
 	preloadFileLists();
 	
 	random_shuffle(m_classFiles.begin(), m_classFiles.end());
+	sort(m_classNames.begin(), m_classNames.end());
 }
 
 DatasetManager::~DatasetManager() {

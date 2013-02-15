@@ -14,7 +14,7 @@ using namespace boost::filesystem;
 
 #include "DatasetManager.h"
 
-DatasetManager datasetManager("data/original_scene_categories", 100);
+DatasetManager datasetManager("data/scene_categories", 100);
 
 
 // Define descriptors to be used
@@ -224,6 +224,13 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 	
 	// Go trough all classes in the given dataset
 	vector<string> classes = datasetManager.listClasses();
+	float confusionMatrix[classes.size()][classes.size()];
+	for(unsigned int i = 0; i < classes.size(); i++) {
+		for(unsigned int j = 0; j < classes.size(); j++) {
+			confusionMatrix[i][j] = 0;
+		}
+	}
+	
 	for(unsigned int i = 0; i < classes.size(); i++) {
 		const string classname = classes[i];
 		
@@ -264,6 +271,11 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 		    	}
 		    }
 		    
+		    if(std::find(filenames_train.begin(),
+	    			filenames_train.end(), img) == filenames_train.end()) {
+				confusionMatrix[i][class_result]++;
+			}
+		    
 		    // Show progress
 		    #pragma omp critical
 		    {
@@ -281,6 +293,10 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 			}
 		}
 		
+		for(unsigned int j = 0; j < classes.size(); j++) {
+			confusionMatrix[i][j] = confusionMatrix[i][j] / filenames_test.size();
+		}
+		
 		// Determine the recognition and recall rates
 		int percent_recall =
 			correct_classifications_train * 100.0 / filenames_train.size();	
@@ -292,6 +308,26 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 			<< "\r    Recall: " << percent_recall << "%" << endl;
 		cout << "    Recognition: " << percent_recognition << "%" << endl;
 	}
+	
+	cout << "  Confusion Matrix:" << endl;
+	
+	unsigned int diagonalTotal = 0;
+	for(unsigned int i = 0; i < classes.size(); i++) {
+		cout << "    ";
+		for(unsigned int j = 0; j < classes.size(); j++) {
+			int percentage = confusionMatrix[i][j] * 100;
+			if(percentage < 10)
+				cout << " ";
+			cout << " " << percentage << " ";
+			
+			if(i == j) {
+				diagonalTotal += percentage;
+			}
+		}
+		cout << endl;
+	}
+	int diagonalAvg = diagonalTotal / classes.size();
+	cout << "    Diagonal: " << diagonalAvg << "%" << endl;
 }
 
 void generateDescriptorCache(const cv::Mat& vocabulary) {
