@@ -13,12 +13,7 @@ using namespace boost;
 DatasetManager datasetManager("data/scene_categories", 100);
 OutputHelper* m_outputHelper = new OutputHelper();
 
-
-// Define descriptors to be used
-const cv::Ptr<cv::DescriptorExtractor> descriptor_extractor =
-	cv::DescriptorExtractor::create("SIFT");
-const cv::Ptr<cv::DescriptorMatcher> descriptor_matcher =
-	cv::DescriptorMatcher::create("FlannBased");
+TrainingSettings* m_settings;
 
 
 // Turn a filename into a valid XML tag name
@@ -64,16 +59,10 @@ CvSVM train_classifier(map<string, cv::Mat> train_data) {
 
 
 // Transform and prepare the dataset to be trained
-CvSVM get_classifier(const cv::Mat& vocabulary) {
+CvSVM get_classifier() {
 	
 	m_outputHelper->printMessage("Calculating feature histograms:");
-	
-	// Get new descriptors for images
-	cv::BOWImgDescriptorExtractor bow_extractor(
-		descriptor_extractor, descriptor_matcher);
 		
-	bow_extractor.setVocabulary(vocabulary);
-	
 	vector<string> class_list;
 	map<string, cv::Mat> training_data;
 	
@@ -125,15 +114,9 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 
 
 // Test the classififer against all images
-void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
+void test_classifier(const CvSVM& classifier) {
 	
 	m_outputHelper->printMessage("Testing the classifier:");
-	
-	// Get new descriptors for images
-	cv::BOWImgDescriptorExtractor bow_extractor(
-		descriptor_extractor, descriptor_matcher);
-		
-	bow_extractor.setVocabulary(vocabulary);
 	
 	cv::FileStorage fs("histograms.xml", cv::FileStorage::READ);
 	
@@ -218,7 +201,8 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 
 int main() {
 	// Define algorithm parameters
-	TrainingSettings* settings = new TrainingSettings();
+	m_settings = new TrainingSettings();
+	TrainingSettings* settings = m_settings;
 	settings->setDatasetSettings("data/scene_categories", 100);
 	settings->setCodebookSettings(200, "SIFT", "SIFT");
 	settings->setHistogramSettings("FlannBased");
@@ -238,9 +222,9 @@ int main() {
 	*/
 	
 	// Handle the classifier creation or loading
-	CvSVM classifier = get_classifier(vocabulary);
+	CvSVM classifier = get_classifier();
 	
-	test_classifier(classifier, vocabulary);
+	test_classifier(classifier);
 	
 	return 0;
 }

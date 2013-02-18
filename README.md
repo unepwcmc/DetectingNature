@@ -11,7 +11,7 @@ Building
 3. Run with `./DetectingNature`
 
 
-Dataset Structure
+Dataset structure
 ---------------
 
 	data/
