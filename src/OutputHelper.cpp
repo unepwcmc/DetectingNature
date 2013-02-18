@@ -6,19 +6,21 @@ OutputHelper::OutputHelper() {
 }
 
 void OutputHelper::printInlineMessage(string message,
-		unsigned int indentLevel) {
+		unsigned int indentLevel) const {
 		
 	cout << clearLine() << indent(indentLevel) << message;
 	cout.flush();
 }
 
-void OutputHelper::printMessage(string message, unsigned int indentLevel) {
+void OutputHelper::printMessage(string message,
+		unsigned int indentLevel) const {
+	
 	printInlineMessage(message, indentLevel);
 	cout << endl;
 }
 
 void OutputHelper::printProgress(const string message, unsigned int current,
-		unsigned int total,	unsigned int indentLevel) {
+		unsigned int total,	unsigned int indentLevel) const {
 
 	int percent = current * 100.0 / total;
 	cout << clearLine() << indent(indentLevel) << message
@@ -33,7 +35,7 @@ void OutputHelper::printProgress(const string message, unsigned int current,
 
 void OutputHelper::printResults(string message, unsigned int current,
 		unsigned int total, int result, float value,
-		unsigned int indentLevel) {
+		unsigned int indentLevel) const {
 		
 	int percent = current * 100.0 / total;
 	cout << clearLine() << indent(indentLevel) << message
@@ -44,7 +46,7 @@ void OutputHelper::printResults(string message, unsigned int current,
 }
 
 void OutputHelper::printResults(unsigned int correctTrain, unsigned int sizeTrain,
-		 unsigned int correctTest, unsigned int sizeTest) {
+		 unsigned int correctTest, unsigned int sizeTest) const {
 		 
 	int percentRecall = correctTrain * 100.0 / sizeTrain;	
 	
@@ -56,7 +58,7 @@ void OutputHelper::printResults(unsigned int correctTrain, unsigned int sizeTrai
 }
 
 void OutputHelper::printConfusionMatrix(const vector<string>& classes,
-		const multi_array<float, 2>& confusionMatrix) {
+		const multi_array<float, 2>& confusionMatrix) const {
 	
 	int largestClassName = max_element(classes.begin(), classes.end(),
 		[](string a, string b) {return a.size() < b.size();})->size();
@@ -86,13 +88,14 @@ void OutputHelper::printConfusionMatrix(const vector<string>& classes,
 	cout << indent(2) << "Diagonal: " << diagonalAvg << "%" << endl;
 }
 
-string OutputHelper::clearLine() {
+string OutputHelper::clearLine() const {
 	stringstream ss;
 	ss << "\r" << setw(80) << " " << "\r";
 	return ss.str();
 }
 
-string OutputHelper::indent(int level) {
+string OutputHelper::indent(int level) const {
+	if(level == 0) return "";
 	stringstream ss;
 	ss << setw(2 * level) << " ";
 	return ss.str();

@@ -39,11 +39,11 @@ string DatasetManager::getFilename(string filePath) {
 	return path(filePath).filename().string();
 }
 
-vector<string> DatasetManager::listClasses() {
+vector<string> DatasetManager::listClasses() const {
 	return m_classNames;
 }
 
-vector<string> DatasetManager::listFiles(DatasetPartitioning type) {
+vector<string> DatasetManager::listFiles(DatasetPartitioning type) const {
 	vector<string> results;
 
 	unsigned int totTrain = 0;
@@ -65,7 +65,7 @@ vector<string> DatasetManager::listFiles(DatasetPartitioning type) {
 }
 
 vector<string> DatasetManager::listFiles(
-		DatasetPartitioning type, string desiredClass) {
+		DatasetPartitioning type, string desiredClass) const {
 
 	vector<string> results;
 

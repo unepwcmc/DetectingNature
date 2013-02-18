@@ -3,7 +3,6 @@
 #include <iterator>
 #include <algorithm>
 #include <string>
-#include <iomanip>
 using namespace std;
 
 #include <opencv2/opencv.hpp>
@@ -15,8 +14,8 @@ using namespace std;
 using namespace boost::filesystem;
 using namespace boost;
 
-#include "DatasetManager.h"
-#include "OutputHelper.h"
+#include "TrainingSettings.h"
+#include "CodebookManager.h"
 
 DatasetManager datasetManager("data/scene_categories", 100);
 OutputHelper outputHelper;
@@ -39,67 +38,8 @@ string cleanFilename(string filename) {
 	return filename;
 }
 
-
-// Computes the codebook using the bag-of-words technique 
-cv::Mat compute_codebook(const unsigned int codebook_size) {
-	outputHelper.printMessage("Extracting Features:");
-	
-	// Initialize Cluster Trainer
-	cv::BOWKMeansTrainer codebook_trainer(codebook_size);
-
-	// Go trough all classes in the given dataset
-	const vector<string> filenames =
-		datasetManager.listFiles(DatasetManager::TRAIN);
-	
-	unsigned int totalProcessedImages = 0;
-	
-	#pragma omp parallel for
-	for(unsigned int i = 0 ; i < filenames.size(); i++) {
-		string img = filenames[i];
-		
-		// Load the image
-		cv::Mat input = cv::imread(img, CV_LOAD_IMAGE_GRAYSCALE);
-				
-		// Extract features
-		std::vector<cv::KeyPoint> keypoints;
-		features_detector->detect(input, keypoints);
-		
-		cv::Mat features;
-		descriptor_extractor->compute(input, keypoints, features);
-		
-		// Train bag-of-words
-		#pragma omp critical
-		{
-			totalProcessedImages++;
-		
-	    	codebook_trainer.add(features);
-	    
-		    // Show progress
-		    outputHelper.printProgress("Processing file " +
-		    	DatasetManager::getFilename(img),
-		    	totalProcessedImages, filenames.size());
-		}
-	}
-	
-	// Train the clusters
-	outputHelper.printMessage("Computing Codebook:");
-	outputHelper.printInlineMessage(str(format("Clustering %1% descriptors") %
-		codebook_trainer.descripotorsCount()), 1);
-
-	cv::Mat vocabulary = codebook_trainer.cluster();
-	
-	cv::FileStorage fs("vocab.xml", cv::FileStorage::WRITE);
-	fs << "vocabulary" << vocabulary;
-	
-	outputHelper.printInlineMessage("Done", 1);
-	
-	return vocabulary;
-}
-
-
 // Take the transformed dataset and train the classifier
-CvSVM train_classifier(vector<string> class_list,
-		map<string, cv::Mat> train_data) {
+CvSVM train_classifier(map<string, cv::Mat> train_data) {
 	
 	outputHelper.printMessage("Training the classifier:");
 
@@ -194,7 +134,7 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 		}
 	}
 	
-	return train_classifier(class_list, training_data);
+	return train_classifier(training_data);
 }
 
 
@@ -337,19 +277,17 @@ void generateDescriptorCache(const cv::Mat& vocabulary) {
 }
 
 
-int main(int argc, char** argv) {
+int main() {
 	// Define algorithm parameters
-	const unsigned int codebook_size = 200;
+	TrainingSettings* settings = new TrainingSettings();
+	settings->setDatasetSettings("data/scene_categories", 100);
+	settings->setCodebookSettings(200, "SIFT", "SIFT");
 	
-	// Handle the vocabulary creation or loading
-	cv::Mat vocabulary;
-	if(exists("vocab.xml")) {
-		cv::FileStorage fs("vocab.xml", cv::FileStorage::READ);
-		fs["vocabulary"] >> vocabulary;
-	} else {
-		vocabulary = compute_codebook(codebook_size);
-	}
+	CodebookManager* codebookManager = new CodebookManager(settings);
+	codebookManager->generateMissingVocabulary();
+	cv::Mat vocabulary = codebookManager->getVocabulary();
 	
+	// Handle the vocabulary creation or loading	
 	if(!exists("histograms.xml")) {
 		generateDescriptorCache(vocabulary);
 	}

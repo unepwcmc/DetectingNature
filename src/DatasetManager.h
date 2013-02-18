@@ -21,10 +21,10 @@ public:
 	
 	static std::string getFilename(std::string filePath);
 	
-	std::vector<std::string> listClasses();
-	std::vector<std::string> listFiles(DatasetPartitioning type);
+	std::vector<std::string> listClasses() const;
+	std::vector<std::string> listFiles(DatasetPartitioning type) const;
 	std::vector<std::string> listFiles(
-		DatasetPartitioning type, std::string desiredClass);
+		DatasetPartitioning type, std::string desiredClass) const;
 		
 private:
 	void preloadFileLists();
