@@ -3,6 +3,7 @@
 #include <iterator>
 #include <algorithm>
 #include <string>
+#include <iomanip>
 using namespace std;
 
 #include <opencv2/opencv.hpp>
@@ -10,11 +11,15 @@ using namespace std;
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/format.hpp>
 using namespace boost::filesystem;
+using namespace boost;
 
 #include "DatasetManager.h"
+#include "OutputHelper.h"
 
 DatasetManager datasetManager("data/scene_categories", 100);
+OutputHelper outputHelper;
 
 
 // Define descriptors to be used
@@ -26,15 +31,7 @@ const cv::Ptr<cv::DescriptorMatcher> descriptor_matcher =
 	cv::DescriptorMatcher::create("FlannBased");
 
 
-// Clear the current line to allow clean overwriting
-string clear_line() {
-	stringstream ss;
-	ss << "\r";
-	for(int i = 0; i < 80; i++)
-		ss << " ";
-	return ss.str();
-}
-
+// Turn a filename into a valid XML tag name
 string cleanFilename(string filename) {
 	replace(filename.begin(), filename.end(), '/', '-');
 	replace(filename.begin(), filename.end(), '.', '-');
@@ -45,8 +42,7 @@ string cleanFilename(string filename) {
 
 // Computes the codebook using the bag-of-words technique 
 cv::Mat compute_codebook(const unsigned int codebook_size) {
-	
-	cout << "Extracting Features:" << endl;
+	outputHelper.printMessage("Extracting Features:");
 	
 	// Initialize Cluster Trainer
 	cv::BOWKMeansTrainer codebook_trainer(codebook_size);
@@ -79,27 +75,23 @@ cv::Mat compute_codebook(const unsigned int codebook_size) {
 	    	codebook_trainer.add(features);
 	    
 		    // Show progress
-			int percent = totalProcessedImages * 100.0 / filenames.size();
-			cout << "\r  Processing file " << DatasetManager::getFilename(img)
-				<< " - " << totalProcessedImages << "/" << filenames.size()
-				<< " (" << percent << "%)";
-			cout.flush();
+		    outputHelper.printProgress("Processing file " +
+		    	DatasetManager::getFilename(img),
+		    	totalProcessedImages, filenames.size());
 		}
 	}
-	cout << endl;
 	
 	// Train the clusters
-	cout << "Computing Codebook:" << endl;
-	cout << "  Clustering " << codebook_trainer.descripotorsCount()
-		<< " descriptors";
-	cout.flush();
+	outputHelper.printMessage("Computing Codebook:");
+	outputHelper.printInlineMessage(str(format("Clustering %1% descriptors") %
+		codebook_trainer.descripotorsCount()), 1);
 
 	cv::Mat vocabulary = codebook_trainer.cluster();
 	
 	cv::FileStorage fs("vocab.xml", cv::FileStorage::WRITE);
 	fs << "vocabulary" << vocabulary;
 	
-	cout << endl;
+	outputHelper.printInlineMessage("Done", 1);
 	
 	return vocabulary;
 }
@@ -108,8 +100,8 @@ cv::Mat compute_codebook(const unsigned int codebook_size) {
 // Take the transformed dataset and train the classifier
 CvSVM train_classifier(vector<string> class_list,
 		map<string, cv::Mat> train_data) {
-		
-	cout << "Training the classifier:" << endl;
+	
+	outputHelper.printMessage("Training the classifier:");
 
 	// Define samples and labels	
 	cv::Mat samples;
@@ -139,7 +131,7 @@ CvSVM train_classifier(vector<string> class_list,
 	//cv::FileStorage fs("classifier.xml", cv::FileStorage::WRITE);
 	//fs << "classifier" << classifier;
 	
-	cout << clear_line() << "\r  Done" << endl;
+	outputHelper.printMessage("Done:", 1);
 	
 	return classifier;
 }
@@ -147,8 +139,8 @@ CvSVM train_classifier(vector<string> class_list,
 
 // Transform and prepare the dataset to be trained
 CvSVM get_classifier(const cv::Mat& vocabulary) {
-		
-	cout << "Calculating feature histograms:" << endl;
+	
+	outputHelper.printMessage("Calculating feature histograms:");
 	
 	// Get new descriptors for images
 	cv::BOWImgDescriptorExtractor bow_extractor(
@@ -164,7 +156,7 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 	// Go trough all classes in the given dataset
 	const vector<string> classes = datasetManager.listClasses();
 	BOOST_FOREACH(string classname, classes) {
-		cout << "  Class: " << classname << endl;
+		outputHelper.printMessage("Class: " + classname, 1);
 				
 		// Go through each picture in the class
 		vector<string> filenames =
@@ -195,24 +187,21 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 				training_data[classname].push_back(img_descriptor);
 
 				// Show progress
-				int percent = totalProcessedImages * 100.0 / filenames.size();
-				cout << "\r    Processing file "
-					<< DatasetManager::getFilename(img)
-					<< " - " << totalProcessedImages << "/" << filenames.size()
-					<< " (" << percent << "%)";
-				cout.flush();
+				outputHelper.printProgress("Processing file " +
+					DatasetManager::getFilename(img),
+					totalProcessedImages, filenames.size(), 2);
 			}
 		}
-		cout << endl;
 	}
 	
 	return train_classifier(class_list, training_data);
 }
 
 
+// Test the classififer against all images
 void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 	
-	cout << "Testing the classifier:" << endl;
+	outputHelper.printMessage("Testing the classifier:");
 	
 	// Get new descriptors for images
 	cv::BOWImgDescriptorExtractor bow_extractor(
@@ -224,17 +213,15 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 	
 	// Go trough all classes in the given dataset
 	vector<string> classes = datasetManager.listClasses();
-	float confusionMatrix[classes.size()][classes.size()];
-	for(unsigned int i = 0; i < classes.size(); i++) {
-		for(unsigned int j = 0; j < classes.size(); j++) {
-			confusionMatrix[i][j] = 0;
-		}
-	}
+	multi_array<float, 2> confusionMatrix(
+		extents[classes.size()][classes.size()]);
+	fill(confusionMatrix.origin(),
+		confusionMatrix.origin() + confusionMatrix.size(), 0);
 	
 	for(unsigned int i = 0; i < classes.size(); i++) {
 		const string classname = classes[i];
 		
-		cout << "  Class: " << classname << endl;
+		outputHelper.printMessage("Class: " + classname, 1);
 		
 		// Go trough each picture in the class
 		vector<string> filenames =
@@ -280,59 +267,33 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 		    #pragma omp critical
 		    {
 		    	totalProcessedImages++;
-		    	
-		    	int percent = totalProcessedImages * 100.0 / filenames.size();
-		    	
-				cout << clear_line()
-					<< "\r    Testing file " << DatasetManager::getFilename(img)
-					<< " - " << totalProcessedImages << "/" << filenames.size()
-					<< " (" << percent << "%)"
-					<< " = Class " << class_result << " ("
-		    		<< class_result_value << ")";
-				cout.flush();
+		    			    	
+				outputHelper.printResults("Testing file " +
+					DatasetManager::getFilename(img),
+					totalProcessedImages, filenames.size(),
+					class_result, class_result_value, 2);
 			}
 		}
 		
 		for(unsigned int j = 0; j < classes.size(); j++) {
-			confusionMatrix[i][j] = confusionMatrix[i][j] / filenames_test.size();
+			confusionMatrix[i][j] =
+				confusionMatrix[i][j] / filenames_test.size();
 		}
 		
-		// Determine the recognition and recall rates
-		int percent_recall =
-			correct_classifications_train * 100.0 / filenames_train.size();	
-		
-		int percent_recognition =
-			correct_classifications_test * 100.0 / filenames_test.size();
-		
-		cout << clear_line()
-			<< "\r    Recall: " << percent_recall << "%" << endl;
-		cout << "    Recognition: " << percent_recognition << "%" << endl;
+		// Show the recognition and recall rates
+		outputHelper.printResults(
+			correct_classifications_train, filenames_train.size(),
+			correct_classifications_test, filenames_test.size());
 	}
 	
-	cout << "  Confusion Matrix:" << endl;
-	
-	unsigned int diagonalTotal = 0;
-	for(unsigned int i = 0; i < classes.size(); i++) {
-		cout << "    ";
-		for(unsigned int j = 0; j < classes.size(); j++) {
-			int percentage = confusionMatrix[i][j] * 100;
-			if(percentage < 10)
-				cout << " ";
-			cout << " " << percentage << " ";
-			
-			if(i == j) {
-				diagonalTotal += percentage;
-			}
-		}
-		cout << endl;
-	}
-	int diagonalAvg = diagonalTotal / classes.size();
-	cout << "    Diagonal: " << diagonalAvg << "%" << endl;
+	outputHelper.printConfusionMatrix(classes, confusionMatrix);
 }
 
+
+// Calculate and save all the desriptors for each image
 void generateDescriptorCache(const cv::Mat& vocabulary) {
 		
-	cout << "Generating descriptor cache:" << endl;
+	outputHelper.printMessage("Generating descriptor cache:");
 	
 	// Get new descriptors for images
 	cv::BOWImgDescriptorExtractor bow_extractor(
@@ -368,15 +329,11 @@ void generateDescriptorCache(const cv::Mat& vocabulary) {
 			fs << imgName << img_descriptor;
 
 			// Show progress
-			int percent = totalProcessedImages * 100.0 / filenames.size();
-			cout << "\r    Processing file "
-				<< DatasetManager::getFilename(img)
-				<< " - " << totalProcessedImages << "/" << filenames.size()
-				<< " (" << percent << "%)";
-			cout.flush();
+			outputHelper.printProgress("Processing file " +
+				DatasetManager::getFilename(img),
+				totalProcessedImages, filenames.size(), 2);
 		}
 	}
-	cout << endl;
 }
 
 
