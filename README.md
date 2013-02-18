@@ -4,13 +4,11 @@ Detecting Nature In Pictures
 Building
 ---------------
 
-1. Add Dataset to the /data folder
+1. Add Dataset to the `/data` folder
 
-2. Build with
-  ./build.sh
+2. Build with `./build.sh`
 
-3. Run with
-	./DetectingNature
+3. Run with `./DetectingNature`
 
 
 Dataset Structure

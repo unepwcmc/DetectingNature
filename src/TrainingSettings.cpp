@@ -25,6 +25,12 @@ void TrainingSettings::setCodebookSettings(unsigned int codebookSize,
 		cv::DescriptorExtractor::create(descriptorExtractorName);
 }
 
+void TrainingSettings::setHistogramSettings(string descriptorMatcherName) {
+	m_descriptorMatcherName = descriptorMatcherName;
+	m_descriptorMatcher = 
+		cv::DescriptorMatcher::create(descriptorMatcherName);
+}
+
 unsigned int TrainingSettings::getCodebookSize() const {
 	return m_codebookSize;
 }
@@ -37,6 +43,12 @@ cv::Ptr<cv::DescriptorExtractor> TrainingSettings::getDescriptorExtractor()
 		const {
 
 	return m_descriptorExtractor;
+}
+
+cv::Ptr<cv::DescriptorMatcher> TrainingSettings::getDescriptorMatcher()
+		const {
+
+	return m_descriptorMatcher;
 }
 
 const OutputHelper* TrainingSettings::getOutputHelper() const {

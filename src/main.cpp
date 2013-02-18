@@ -1,29 +1,20 @@
-#include <cstdio>
-#include <iostream>
-#include <iterator>
-#include <algorithm>
 #include <string>
 using namespace std;
 
 #include <opencv2/opencv.hpp>
-
-#include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/assign/list_of.hpp>
-#include <boost/format.hpp>
 using namespace boost::filesystem;
 using namespace boost;
 
 #include "TrainingSettings.h"
 #include "CodebookManager.h"
+#include "HistogramManager.h"
 
 DatasetManager datasetManager("data/scene_categories", 100);
-OutputHelper outputHelper;
+OutputHelper* m_outputHelper = new OutputHelper();
 
 
 // Define descriptors to be used
-const cv::Ptr<cv::FeatureDetector> features_detector =
-	cv::FeatureDetector::create("SIFT");
 const cv::Ptr<cv::DescriptorExtractor> descriptor_extractor =
 	cv::DescriptorExtractor::create("SIFT");
 const cv::Ptr<cv::DescriptorMatcher> descriptor_matcher =
@@ -40,8 +31,7 @@ string cleanFilename(string filename) {
 
 // Take the transformed dataset and train the classifier
 CvSVM train_classifier(map<string, cv::Mat> train_data) {
-	
-	outputHelper.printMessage("Training the classifier:");
+	m_outputHelper->printMessage("Training the classifier:");
 
 	// Define samples and labels	
 	cv::Mat samples;
@@ -67,11 +57,7 @@ CvSVM train_classifier(map<string, cv::Mat> train_data) {
 	CvSVM classifier;
 	classifier.train(samples, labels, cv::Mat(), cv::Mat(), classifier_params);
 	
-	//TODO Save classifier
-	//cv::FileStorage fs("classifier.xml", cv::FileStorage::WRITE);
-	//fs << "classifier" << classifier;
-	
-	outputHelper.printMessage("Done:", 1);
+	m_outputHelper->printMessage("Done:", 1);
 	
 	return classifier;
 }
@@ -80,7 +66,7 @@ CvSVM train_classifier(map<string, cv::Mat> train_data) {
 // Transform and prepare the dataset to be trained
 CvSVM get_classifier(const cv::Mat& vocabulary) {
 	
-	outputHelper.printMessage("Calculating feature histograms:");
+	m_outputHelper->printMessage("Calculating feature histograms:");
 	
 	// Get new descriptors for images
 	cv::BOWImgDescriptorExtractor bow_extractor(
@@ -96,7 +82,7 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 	// Go trough all classes in the given dataset
 	const vector<string> classes = datasetManager.listClasses();
 	BOOST_FOREACH(string classname, classes) {
-		outputHelper.printMessage("Class: " + classname, 1);
+		m_outputHelper->printMessage("Class: " + classname, 1);
 				
 		// Go through each picture in the class
 		vector<string> filenames =
@@ -127,7 +113,7 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 				training_data[classname].push_back(img_descriptor);
 
 				// Show progress
-				outputHelper.printProgress("Processing file " +
+				m_outputHelper->printProgress("Processing file " +
 					DatasetManager::getFilename(img),
 					totalProcessedImages, filenames.size(), 2);
 			}
@@ -141,7 +127,7 @@ CvSVM get_classifier(const cv::Mat& vocabulary) {
 // Test the classififer against all images
 void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 	
-	outputHelper.printMessage("Testing the classifier:");
+	m_outputHelper->printMessage("Testing the classifier:");
 	
 	// Get new descriptors for images
 	cv::BOWImgDescriptorExtractor bow_extractor(
@@ -161,7 +147,7 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 	for(unsigned int i = 0; i < classes.size(); i++) {
 		const string classname = classes[i];
 		
-		outputHelper.printMessage("Class: " + classname, 1);
+		m_outputHelper->printMessage("Class: " + classname, 1);
 		
 		// Go trough each picture in the class
 		vector<string> filenames =
@@ -208,7 +194,7 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 		    {
 		    	totalProcessedImages++;
 		    			    	
-				outputHelper.printResults("Testing file " +
+				m_outputHelper->printResults("Testing file " +
 					DatasetManager::getFilename(img),
 					totalProcessedImages, filenames.size(),
 					class_result, class_result_value, 2);
@@ -221,59 +207,12 @@ void test_classifier(const CvSVM& classifier, const cv::Mat& vocabulary) {
 		}
 		
 		// Show the recognition and recall rates
-		outputHelper.printResults(
+		m_outputHelper->printResults(
 			correct_classifications_train, filenames_train.size(),
 			correct_classifications_test, filenames_test.size());
 	}
 	
-	outputHelper.printConfusionMatrix(classes, confusionMatrix);
-}
-
-
-// Calculate and save all the desriptors for each image
-void generateDescriptorCache(const cv::Mat& vocabulary) {
-		
-	outputHelper.printMessage("Generating descriptor cache:");
-	
-	// Get new descriptors for images
-	cv::BOWImgDescriptorExtractor bow_extractor(
-		descriptor_extractor, descriptor_matcher);
-		
-	bow_extractor.setVocabulary(vocabulary);
-	
-	// Go trough all classes in the given dataset
-	vector<string> filenames =
-		datasetManager.listFiles(DatasetManager::ALL);
-	
-	cv::FileStorage fs("histograms.xml", cv::FileStorage::WRITE);
-
-	unsigned int totalProcessedImages = 0;
-	#pragma omp parallel for
-	for(unsigned int i = 0;	i < filenames.size(); i++) {
-		string img = filenames[i];
-	
-		// Extract features
-		cv::Mat input = cv::imread(img, CV_LOAD_IMAGE_GRAYSCALE);
-		std::vector<cv::KeyPoint> keypoints;
-		features_detector->detect(input, keypoints);
-		
-		// Compute image final descriptor
-		cv::Mat img_descriptor;
-	    bow_extractor.compute(input, keypoints, img_descriptor);
-	    
-	    #pragma omp critical
-	    {	    
-		    totalProcessedImages++;
-		    
-		    string imgName = cleanFilename(img);		    
-			fs << imgName << img_descriptor;
-
-			// Show progress
-			outputHelper.printProgress("Processing file " +
-				DatasetManager::getFilename(img),
-				totalProcessedImages, filenames.size(), 2);
-		}
-	}
+	m_outputHelper->printConfusionMatrix(classes, confusionMatrix);
 }
 
 
@@ -282,15 +221,21 @@ int main() {
 	TrainingSettings* settings = new TrainingSettings();
 	settings->setDatasetSettings("data/scene_categories", 100);
 	settings->setCodebookSettings(200, "SIFT", "SIFT");
+	settings->setHistogramSettings("FlannBased");
 	
 	CodebookManager* codebookManager = new CodebookManager(settings);
 	codebookManager->generateMissingVocabulary();
 	cv::Mat vocabulary = codebookManager->getVocabulary();
 	
-	// Handle the vocabulary creation or loading	
-	if(!exists("histograms.xml")) {
-		generateDescriptorCache(vocabulary);
-	}
+	HistogramManager* histogramManager =
+		new HistogramManager(settings, vocabulary);
+	histogramManager->generateMissingHistograms();
+	
+	/*
+	ClassifierManager* classifierManager =
+		new ClassifierManager(settings, histogramManager);
+	CvSVM classifier = classifierManager->classify();	
+	*/
 	
 	// Handle the classifier creation or loading
 	CvSVM classifier = get_classifier(vocabulary);

@@ -18,11 +18,14 @@ public:
 	void setCodebookSettings(unsigned int codebookSize, 
 		std::string featureDetectorName, std::string descriptorExtractorName);
 	
+	void setHistogramSettings(std::string descriptorMatcherName);
+	
 	unsigned int getCodebookSize() const;
 	const OutputHelper* getOutputHelper() const;
 	const DatasetManager* getDatasetManager() const;
 	cv::Ptr<cv::FeatureDetector> getFeatureDetector() const;
 	cv::Ptr<cv::DescriptorExtractor> getDescriptorExtractor() const;
+	cv::Ptr<cv::DescriptorMatcher> getDescriptorMatcher() const;
 
 private:
 	// General helpers
