@@ -9,22 +9,22 @@
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/utility.hpp>
 
 class DatasetManager {
 
 public:
-	enum DatasetPartitioning { ALL, TRAIN, TEST };
-
-	DatasetManager(const std::string datasetPath,
-		const unsigned int numTrainImages);
+	DatasetManager();
+	DatasetManager(const std::string datasetPath);
 	~DatasetManager();
 	
 	static std::string getFilename(std::string filePath);
 	
 	std::vector<std::string> listClasses() const;
-	std::vector<std::string> listFiles(DatasetPartitioning type) const;
-	std::vector<std::string> listFiles(
-		DatasetPartitioning type, std::string desiredClass) const;
+	std::vector<std::string> listFiles() const;
+	std::vector<unsigned int> getImageClasses() const;
+	std::string getDatasetPath() const;
 		
 private:
 	void preloadFileLists();
@@ -32,9 +32,18 @@ private:
 		boost::filesystem::path classDir);
 
 	std::string m_datasetPath;
-	unsigned int m_numTrainImages;
 	std::vector<std::string> m_classNames;
 	std::vector<std::pair<std::string, std::string> > m_classFiles;
+	
+	// Boost serialization
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & m_datasetPath;
+		ar & m_classNames;
+		ar & m_classFiles;
+	}
 };
 
 #endif

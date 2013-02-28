@@ -3,11 +3,11 @@ using namespace std;
 using namespace boost;
 using namespace boost::filesystem;
 
-DatasetManager::DatasetManager(const string datasetPath,
-		const unsigned int numTrainImages) {
-		
+DatasetManager::DatasetManager() {
+}
+
+DatasetManager::DatasetManager(const string datasetPath) {
 	m_datasetPath = datasetPath;
-	m_numTrainImages = numTrainImages;
 	
 	preloadFileLists();
 	
@@ -43,47 +43,29 @@ vector<string> DatasetManager::listClasses() const {
 	return m_classNames;
 }
 
-vector<string> DatasetManager::listFiles(DatasetPartitioning type) const {
+vector<string> DatasetManager::listFiles() const {
 	vector<string> results;
 
-	unsigned int totTrain = 0;
 	pair<string, string> data;
 	BOOST_FOREACH(data, m_classFiles) {
-		if((type == ALL) ||
-			(type == TRAIN && results.size() < m_numTrainImages) ||
-			(type == TEST && totTrain >= m_numTrainImages)) {
-			
-			results.push_back(data.first);
-		}
-		
-		if(type == TEST && totTrain < m_numTrainImages) {
-			totTrain++;
-		}
+		results.push_back(data.first);
 	}
 	
 	return results;
 }
 
-vector<string> DatasetManager::listFiles(
-		DatasetPartitioning type, string desiredClass) const {
+vector<unsigned int> DatasetManager::getImageClasses() const {
+	vector<unsigned int> results;
 
-	vector<string> results;
-
-	unsigned int totTrain = 0;
 	pair<string, string> data;
 	BOOST_FOREACH(data, m_classFiles) {
-		if(data.second == desiredClass) {
-			if((type == ALL) ||
-				(type == TRAIN && results.size() < m_numTrainImages) ||
-				(type == TEST && totTrain >= m_numTrainImages)) {
-				
-				results.push_back(data.first);
-			}
-			
-			if(type == TEST && totTrain < m_numTrainImages) {
-				totTrain++;
-			}
-		}
+		results.push_back(distance(m_classNames.begin(),
+			find(m_classNames.begin(), m_classNames.end(), data.second)));
 	}
+	
 	return results;
+}
+
+string DatasetManager::getDatasetPath() const {
+	return m_datasetPath;
 }
