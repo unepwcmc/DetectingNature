@@ -1,4 +1,5 @@
 #include "FeatureExtractor.h"
+using namespace std;
 
 FeatureExtractor::FeatureExtractor() {
 
@@ -32,12 +33,13 @@ ImageFeatures* FeatureExtractor::extractHog(Image& img) {
 	int numDescriptors = vl_hog_get_width(hog) * vl_hog_get_height(hog);
 	
 	float* descriptors =
-		new float[descriptorSize * numDescriptors * sizeof(float)];
+		new float[descriptorSize * numDescriptors];
 	vl_hog_extract(hog, descriptors);
 	
 	ImageFeatures* imageFeatures =
 		new ImageFeatures(descriptors, descriptorSize, numDescriptors);
 	
+	delete[] descriptors;
 	vl_hog_delete(hog);
 	
 	return imageFeatures;

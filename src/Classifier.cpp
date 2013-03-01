@@ -12,7 +12,7 @@ Classifier::Classifier(vector<Histogram*> histograms,
 	std::vector<Histogram*> histogramsTest;
 	std::vector<unsigned int> imageClassesTest;
 
-	unsigned int classTotal[classNames.size()];
+	vector<unsigned int> classTotal(classNames.size(), 0);
 	for(unsigned int i = 0; i < histograms.size(); i++) {
 		if(classTotal[imageClasses[i]] < trainImagesPerClass) {
 			histogramsTrain.push_back(histograms[i]);
@@ -35,9 +35,22 @@ Classifier::Classifier(vector<Histogram*> histograms,
 	
 	m_classNames = classNames;
 	m_numTrainImages = trainImagesPerClass * classNames.size();
+	
+	m_svmProb = nullptr;
+	m_svmParams = nullptr;
 }
 
-Classifier::~Classifier() {	
+Classifier::~Classifier() {
+	if(m_svmProb != nullptr) {
+		for(unsigned int i = 0; i < m_numTrainImages; i++)
+			delete[] m_svmProb->x[i];
+		delete[] m_svmProb->x;
+		delete m_svmProb;
+	}
+	
+	if(m_svmParams != nullptr) {
+		delete m_svmParams;
+	}
 }
 
 float* Classifier::flattenHistogramData() {
@@ -97,21 +110,21 @@ double Classifier::intersectionKernel(Histogram* a, Histogram* b) {
 void Classifier::classify() {
 	OutputHelper::printMessage("Training Classifier:");
 
-	svm_problem* prob = new svm_problem();
-	prob->l = m_numTrainImages;
-	prob->y = &m_imageClasses[0];
-	prob->x = new svm_node*[m_numTrainImages];
+	m_svmProb = new svm_problem();
+	m_svmProb->l = m_numTrainImages;
+	m_svmProb->y = &m_imageClasses[0];
+	m_svmProb->x = new svm_node*[m_numTrainImages];
 	
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
 	for(unsigned int i = 0; i < m_numTrainImages; i++) {
-		prob->x[i] = new svm_node[m_numTrainImages + 2];
-		prob->x[i][0].index = 0;
-		prob->x[i][0].value = i + 1;
+		m_svmProb->x[i] = new svm_node[m_numTrainImages + 2];
+		m_svmProb->x[i][0].index = 0;
+		m_svmProb->x[i][0].value = i + 1;
 		#pragma omp parallel for
 		for(unsigned int j = 0; j < m_numTrainImages; j++) {				
-			prob->x[i][j+1].index = j + 1;
-			prob->x[i][j+1].value =
+			m_svmProb->x[i][j+1].index = j + 1;
+			m_svmProb->x[i][j+1].value =
 				intersectionKernel(m_histograms[i], m_histograms[j]);
 		}
 		
@@ -123,17 +136,17 @@ void Classifier::classify() {
 		}
 	}
 	
-	svm_parameter* params = new svm_parameter();
-	params->svm_type = C_SVC;
-	params->kernel_type = PRECOMPUTED;
-	params->cache_size = 500;
-	params->C = 10;
-	params->eps = 1e-3;
-	params->shrinking = 1;
-	params->probability = 1;
-	params->nr_weight = 0;
+	m_svmParams = new svm_parameter();
+	m_svmParams->svm_type = C_SVC;
+	m_svmParams->kernel_type = PRECOMPUTED;
+	m_svmParams->cache_size = 500;
+	m_svmParams->C = 10;
+	m_svmParams->eps = 1e-3;
+	m_svmParams->shrinking = 1;
+	m_svmParams->probability = 1;
+	m_svmParams->nr_weight = 0;
 	
-	m_svmModel = svm_train(prob, params);
+	m_svmModel = svm_train(m_svmProb, m_svmParams);
 	svm_save_model("model.out", m_svmModel);
 	cout << endl;
 }

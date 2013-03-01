@@ -94,6 +94,9 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 			}
 		}
 		
+		for(unsigned int i = 0; i < histograms.size(); i++)
+			delete features[i];
+		
 		ofstream ofs(cacheFilename);
 		boost::archive::binary_oarchive oa(ofs);
 		oa << histograms;
@@ -118,6 +121,9 @@ void ClassificationFramework::trainClassifier() {
 	Classifier classifier(histograms, imageClasses, classNames, 100);
 	classifier.classify();
 	classifier.test();
+	
+	for(unsigned int i = 0; i < histograms.size(); i++)
+		delete histograms[i];
 }
 
 void ClassificationFramework::run() {	

@@ -17,7 +17,7 @@ Image::Image(std::string filename) {
 }
 
 Image::~Image() {
-	delete m_data;
+	delete[] m_data;
 }
 
 unsigned int Image::getWidth() const {

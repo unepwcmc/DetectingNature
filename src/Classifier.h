@@ -31,6 +31,8 @@ private:
 	double intersectionKernel(Histogram* a, Histogram* b);
 	
 	svm_model* m_svmModel;
+	svm_parameter* m_svmParams;
+	svm_problem* m_svmProb;
 };
 
 #endif
