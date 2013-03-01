@@ -5,6 +5,8 @@ extern "C" {
 	#include <vl/kmeans.h>
 }
 
+#include <vector>
+
 #include "ImageFeatures.h"
 #include "Histogram.h"
 
