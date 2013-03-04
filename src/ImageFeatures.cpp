@@ -1,10 +1,13 @@
 #include "ImageFeatures.h"
+using namespace std;
 
 ImageFeatures::ImageFeatures() {
 };
 
 ImageFeatures::ImageFeatures(float const* features,
-		unsigned int descriptorSize, unsigned int numFeatures) {
+		unsigned int descriptorSize, unsigned int numFeatures,
+		unsigned int width, unsigned int height,
+		vector<pair<int, int> > coordinates) {
 	
 	m_features.reserve(descriptorSize * numFeatures);
 	
@@ -13,6 +16,9 @@ ImageFeatures::ImageFeatures(float const* features,
 	
 	m_descriptorSize = descriptorSize;
 	m_numFeatures = numFeatures;
+	m_width = width;
+	m_height = height;
+	m_coordinates = coordinates;
 }
 
 unsigned int ImageFeatures::getNumFeatures() const {
@@ -29,4 +35,16 @@ const float* ImageFeatures::getFeature(unsigned int index) const {
 
 const float* ImageFeatures::getFeatures() const {
 	return &m_features[0];
+}
+
+pair<int, int> ImageFeatures::getCoordinates(unsigned int index) const {
+	return m_coordinates[index];
+}
+
+unsigned int ImageFeatures::getWidth() const {
+	return m_width;
+}
+
+unsigned int ImageFeatures::getHeight() const {
+	return m_height;
 }

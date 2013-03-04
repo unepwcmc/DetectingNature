@@ -12,14 +12,18 @@ extern "C" {
 
 class Codebook {
 public:
-	Codebook(VlKMeans* kmeans, int numClusters);
+	Codebook(VlKMeans* kmeans, unsigned int numClusters);
 	~Codebook();
 	
-	Histogram* computeHistogram(ImageFeatures* imageFeatures);
+	Histogram* computeHistogram(ImageFeatures* imageFeatures,
+		unsigned int levels);
 	
 private:
 	VlKMeans* m_kmeans;
-	int m_numClusters;
+	unsigned int m_numClusters;
+	
+	unsigned int calculateHistogramIndex(unsigned int level,
+		unsigned int cellX, unsigned int cellY);
 };
 
 #endif

@@ -139,7 +139,7 @@ void Classifier::classify() {
 	m_svmParams = new svm_parameter();
 	m_svmParams->svm_type = C_SVC;
 	m_svmParams->kernel_type = PRECOMPUTED;
-	m_svmParams->cache_size = 500;
+	m_svmParams->cache_size = 1000;
 	m_svmParams->C = 10;
 	m_svmParams->eps = 1e-3;
 	m_svmParams->shrinking = 1;

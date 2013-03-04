@@ -12,12 +12,19 @@ ImageFeatures* FeatureExtractor::extractDsift(Image& img) {
 	
 	vl_dsift_process(filter, img.getData());
 		
-	int descriptorSize = vl_dsift_get_descriptor_size(filter);
-	int numDescriptors = vl_dsift_get_keypoint_num(filter);
+	unsigned int descriptorSize = vl_dsift_get_descriptor_size(filter);
+	unsigned int numDescriptors = vl_dsift_get_keypoint_num(filter);
 	float const* descriptors = vl_dsift_get_descriptors(filter);
 	
+	vector<pair<int, int> > coordinates;
+	const VlDsiftKeypoint* keypoints = vl_dsift_get_keypoints(filter);
+	for(unsigned int i = 0; i < numDescriptors; i++) {
+		coordinates.push_back(make_pair(keypoints[i].x, keypoints[i].y));
+	}
+	
 	ImageFeatures* imageFeatures =
-		new ImageFeatures(descriptors, descriptorSize, numDescriptors);
+		new ImageFeatures(descriptors, descriptorSize, numDescriptors,
+			img.getWidth(), img.getHeight(), coordinates);
 	
 	vl_dsift_delete(filter);
 	
@@ -25,6 +32,7 @@ ImageFeatures* FeatureExtractor::extractDsift(Image& img) {
 }
 
 ImageFeatures* FeatureExtractor::extractHog(Image& img) {
+/*
 	VlHog* hog = vl_hog_new(VlHogVariantDalalTriggs, 8, false);
 	vl_hog_put_image(hog, img.getData(), img.getWidth(), img.getHeight(),
 		1, 8);
@@ -43,4 +51,5 @@ ImageFeatures* FeatureExtractor::extractHog(Image& img) {
 	vl_hog_delete(hog);
 	
 	return imageFeatures;
+*/
 }

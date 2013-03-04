@@ -52,9 +52,11 @@ vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
 			}
 		}
 
+		OutputHelper::printInlineMessage("Saving to " + cacheFilename, 1);
 		ofstream ofs(cacheFilename);
 		boost::archive::binary_oarchive oa(ofs);
 		oa << features;
+		OutputHelper::printMessage("Saved to " + cacheFilename, 1);
 	} else {
 		OutputHelper::printInlineMessage("Loading from " + cacheFilename, 1);
 		ifstream ifs(cacheFilename);
@@ -82,7 +84,7 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 		unsigned int currentIter = 0;
 		#pragma omp parallel for
 		for(unsigned int i = 0; i < m_imagePaths.size(); i++) {
-			Histogram* hist = codebook->computeHistogram(features[i]);
+			Histogram* hist = codebook->computeHistogram(features[i], 2);
 			histograms[i] = hist;
 			
 			#pragma omp critical
@@ -97,9 +99,11 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 		for(unsigned int i = 0; i < histograms.size(); i++)
 			delete features[i];
 		
+		OutputHelper::printInlineMessage("Saving to " + cacheFilename, 1);
 		ofstream ofs(cacheFilename);
 		boost::archive::binary_oarchive oa(ofs);
 		oa << histograms;
+		OutputHelper::printMessage("Saved to " + cacheFilename, 1);
 	} else {
 		OutputHelper::printMessage("Generating histograms:");
 		OutputHelper::printInlineMessage("Loading from " + cacheFilename, 1);
