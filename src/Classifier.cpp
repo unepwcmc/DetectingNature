@@ -107,8 +107,18 @@ double Classifier::intersectionKernel(Histogram* a, Histogram* b) {
 	return kernelVal;
 }
 
-void Classifier::classify() {
+void Classifier::classify(double C) {
 	OutputHelper::printMessage("Training Classifier:");
+
+	m_svmParams = new svm_parameter();
+	m_svmParams->svm_type = C_SVC;
+	m_svmParams->kernel_type = PRECOMPUTED;
+	m_svmParams->cache_size = 1000;
+	m_svmParams->C = C;
+	m_svmParams->eps = 1e-6;
+	m_svmParams->shrinking = 1;
+	m_svmParams->probability = 1;
+	m_svmParams->nr_weight = 0;
 
 	m_svmProb = new svm_problem();
 	m_svmProb->l = m_numTrainImages;
@@ -135,16 +145,6 @@ void Classifier::classify() {
 				currentIter, m_numTrainImages);
 		}
 	}
-	
-	m_svmParams = new svm_parameter();
-	m_svmParams->svm_type = C_SVC;
-	m_svmParams->kernel_type = PRECOMPUTED;
-	m_svmParams->cache_size = 1000;
-	m_svmParams->C = 10;
-	m_svmParams->eps = 1e-3;
-	m_svmParams->shrinking = 1;
-	m_svmParams->probability = 1;
-	m_svmParams->nr_weight = 0;
 	
 	m_svmModel = svm_train(m_svmProb, m_svmParams);
 	svm_save_model("model.out", m_svmModel);

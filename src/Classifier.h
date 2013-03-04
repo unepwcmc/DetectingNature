@@ -18,7 +18,7 @@ public:
 		std::vector<std::string> classNames, unsigned int trainImagesPerClass);
 	~Classifier();
 		
-	void classify();
+	void classify(double C);
 	void test();
 
 private:

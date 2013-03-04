@@ -1,13 +1,29 @@
 #include "FeatureExtractor.h"
 using namespace std;
 
-FeatureExtractor::FeatureExtractor() {
+FeatureExtractor::FeatureExtractor(Type type,
+		unsigned int gridSpacing, unsigned int patchSize) {
+	
+	m_type = type;
+	m_gridSpacing = gridSpacing;
+	m_patchSize = patchSize;
+}
 
+ImageFeatures* FeatureExtractor::extract(Image& img) {
+	switch(m_type) {
+	case HOG:
+		return extractHog(img);
+	case DSIFT:
+		return extractDsift(img);
+	default:
+		return nullptr;
+	}
 }
 
 ImageFeatures* FeatureExtractor::extractDsift(Image& img) {
 	VlDsiftFilter* filter =
-		vl_dsift_new_basic(img.getWidth(), img.getHeight(), 8, 4);
+		vl_dsift_new_basic(img.getWidth(), img.getHeight(),
+			m_gridSpacing, m_patchSize / 4);
 	vl_dsift_set_flat_window(filter, true);
 	
 	vl_dsift_process(filter, img.getData());
@@ -52,4 +68,5 @@ ImageFeatures* FeatureExtractor::extractHog(Image& img) {
 	
 	return imageFeatures;
 */
+	return nullptr;
 }

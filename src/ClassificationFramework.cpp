@@ -1,15 +1,17 @@
 #include "ClassificationFramework.h"
 using namespace std;
 
-ClassificationFramework::ClassificationFramework(string datasetPath) {
-	m_cachePath = "cache/" + datasetPath;
+ClassificationFramework::ClassificationFramework(Settings settings) {
+	m_settings = settings;
+
+	m_cachePath = "cache/" + settings.datasetPath;
 	if(!boost::filesystem::exists(m_cachePath)) {
 		boost::filesystem::create_directories(m_cachePath);
 	}
 	
 	string datasetCache = m_cachePath + "/dataset";
 	if(!boost::filesystem::exists(datasetCache)) {
-		m_datasetManager = new DatasetManager(datasetPath);
+		m_datasetManager = new DatasetManager(settings.datasetPath);
 		
 		ofstream ofs(datasetCache);
 		boost::archive::binary_oarchive oa(ofs);
@@ -32,7 +34,8 @@ vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
 	
 	string cacheFilename = m_cachePath + "/descriptors";
 
-	FeatureExtractor featureExtractor;
+	FeatureExtractor featureExtractor(m_settings.featureType,
+		m_settings.gridSpacing, m_settings.patchSize);
 	vector<ImageFeatures*> features(m_imagePaths.size(), nullptr);
 
 	if(!boost::filesystem::exists(cacheFilename)) {
@@ -40,7 +43,7 @@ vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
 		#pragma omp parallel for
 		for(unsigned int i = 0; i < m_imagePaths.size(); i++) {		
 			Image img(m_imagePaths[i]);
-			ImageFeatures* imageFeatures = featureExtractor.extractDsift(img);
+			ImageFeatures* imageFeatures = featureExtractor.extract(img);
 			features[i] = imageFeatures;
 					
 			#pragma omp critical
@@ -79,12 +82,14 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 		OutputHelper::printMessage("Generating histograms:");
 				
 		CodebookGenerator codebookGenerator(features);
-		Codebook* codebook = codebookGenerator.generate(50, 200);
+		Codebook* codebook = codebookGenerator.generate(
+			m_settings.textonImages, m_settings.codewords);
 	
 		unsigned int currentIter = 0;
 		#pragma omp parallel for
 		for(unsigned int i = 0; i < m_imagePaths.size(); i++) {
-			Histogram* hist = codebook->computeHistogram(features[i], 2);
+			Histogram* hist = codebook->computeHistogram(features[i],
+				m_settings.pyramidLevels);
 			histograms[i] = hist;
 			
 			#pragma omp critical
@@ -122,8 +127,9 @@ void ClassificationFramework::trainClassifier() {
 	vector<unsigned int> imageClasses = m_datasetManager->getImageClasses();
 	vector<string> classNames = m_datasetManager->listClasses();
 	
-	Classifier classifier(histograms, imageClasses, classNames, 100);
-	classifier.classify();
+	Classifier classifier(histograms, imageClasses, classNames,
+		m_settings.trainImagesPerClass);
+	classifier.classify(m_settings.C);
 	classifier.test();
 	
 	for(unsigned int i = 0; i < histograms.size(); i++)

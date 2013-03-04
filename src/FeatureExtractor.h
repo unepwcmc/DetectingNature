@@ -11,7 +11,17 @@ extern "C" {
 
 class FeatureExtractor {
 public:
-	FeatureExtractor();
+	enum Type {DSIFT, HOG};
+
+	FeatureExtractor(Type type, unsigned int gridSpacing,
+		unsigned int patchSize);
+	ImageFeatures* extract(Image& img);
+	
+private:
+	Type m_type;
+	unsigned int m_gridSpacing;
+	unsigned int m_patchSize;
+
 	ImageFeatures* extractDsift(Image& img);
 	ImageFeatures* extractHog(Image& img);
 };

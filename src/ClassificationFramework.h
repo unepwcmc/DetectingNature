@@ -14,12 +14,33 @@
 
 class ClassificationFramework {
 public:
-	ClassificationFramework(std::string datasetPath);
+	struct Settings {
+		std::string datasetPath;
+		
+		// Feature settings
+		FeatureExtractor::Type featureType = FeatureExtractor::DSIFT;
+		unsigned int gridSpacing = 8;
+		unsigned int patchSize = 16;
+		
+		// Codebook settings
+		unsigned int textonImages = 50;
+		unsigned int codewords = 200;
+		
+		// Histogram settings
+		unsigned int pyramidLevels = 2;
+		
+		// Classifier settings
+		double C = 10.0;
+		unsigned int trainImagesPerClass = 100;
+	};
+
+	ClassificationFramework(Settings settings);
 	~ClassificationFramework();
 	
 	void run();	
 
 private:
+	Settings m_settings;
 	DatasetManager* m_datasetManager;
 	std::vector<std::string> m_imagePaths;
 	std::string m_cachePath;
