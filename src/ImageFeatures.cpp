@@ -2,6 +2,10 @@
 using namespace std;
 
 ImageFeatures::ImageFeatures() {
+	m_descriptorSize = 0;
+	m_numFeatures = 0;
+	m_width = 0;
+	m_height = 0;
 };
 
 ImageFeatures::ImageFeatures(float const* features,

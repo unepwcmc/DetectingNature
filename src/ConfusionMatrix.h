@@ -10,10 +10,12 @@ public:
 	ConfusionMatrix(std::vector<std::string> classNames);
 	
 	void addEntry(unsigned int originalClass, unsigned int predictedClass);
+	double getDiagonalAverage();
 	void printMatrix();	
 private:
 	boost::multi_array<float, 2> m_confusionMatrix;
 	std::vector<std::string> m_classNames;
+	bool isNormalized;
 	
 	void normalize();
 };

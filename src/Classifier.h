@@ -19,7 +19,7 @@ public:
 	~Classifier();
 		
 	void classify(double C);
-	void test();
+	double test();
 
 private:
 	std::vector<Histogram*> m_histograms;
@@ -27,9 +27,9 @@ private:
 	std::vector<std::string> m_classNames;
 	unsigned int m_numTrainImages;
 
+	std::vector<svm_problem*> m_svmProbs;
 	std::vector<svm_model*> m_svmModels;
 	svm_parameter* m_svmParams;
-	svm_problem* m_svmProb;
 		
 	float* flattenHistogramData();
 	double intersectionKernel(Histogram* a, Histogram* b);

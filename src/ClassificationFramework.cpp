@@ -1,7 +1,7 @@
 #include "ClassificationFramework.h"
 using namespace std;
 
-ClassificationFramework::ClassificationFramework(Settings settings) {
+ClassificationFramework::ClassificationFramework(Settings &settings) {
 	m_settings = settings;
 
 	m_cachePath = "cache/" + settings.datasetPath;
@@ -32,7 +32,10 @@ ClassificationFramework::~ClassificationFramework() {
 vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
 	OutputHelper::printMessage("Extracting features:");
 	
-	string cacheFilename = m_cachePath + "/descriptors";
+	stringstream cacheNameStream;
+	cacheNameStream	<< "_" << m_settings.featureType <<
+		"_" << m_settings.gridSpacing << "_" << m_settings.patchSize;
+	string cacheFilename = m_cachePath + "/descriptors" + cacheNameStream.str();
 
 	FeatureExtractor featureExtractor(m_settings.featureType,
 		m_settings.gridSpacing, m_settings.patchSize);
@@ -72,7 +75,10 @@ vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
 }
 
 vector<Histogram*> ClassificationFramework::generateHistograms() {
-	string cacheFilename = m_cachePath + "/histograms";
+	stringstream cacheNameStream;
+	cacheNameStream	<< "_" << m_settings.textonImages <<
+		"_" << m_settings.codewords << "_" << m_settings.pyramidLevels;
+	string cacheFilename = m_cachePath + "/histograms" + cacheNameStream.str();
 	
 	vector<Histogram*> histograms(m_imagePaths.size(), nullptr);
 	
@@ -121,7 +127,7 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 	return histograms;
 }
 
-void ClassificationFramework::trainClassifier() {
+double ClassificationFramework::trainClassifier() {
 	vector<Histogram*> histograms = generateHistograms();
 
 	vector<unsigned int> imageClasses = m_datasetManager->getImageClasses();
@@ -130,12 +136,14 @@ void ClassificationFramework::trainClassifier() {
 	Classifier classifier(histograms, imageClasses, classNames,
 		m_settings.trainImagesPerClass);
 	classifier.classify(m_settings.C);
-	classifier.test();
+	double result = classifier.test();
 	
 	for(unsigned int i = 0; i < histograms.size(); i++)
 		delete histograms[i];
+
+	return result;
 }
 
-void ClassificationFramework::run() {	
-	trainClassifier();
+double ClassificationFramework::run() {	
+	return trainClassifier();
 }

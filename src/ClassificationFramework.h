@@ -34,10 +34,10 @@ public:
 		unsigned int trainImagesPerClass = 100;
 	};
 
-	ClassificationFramework(Settings settings);
+	ClassificationFramework(Settings &settings);
 	~ClassificationFramework();
 	
-	void run();	
+	double run();	
 
 private:
 	Settings m_settings;
@@ -47,7 +47,7 @@ private:
 	
 	std::vector<ImageFeatures*> generateFeatures();
 	std::vector<Histogram*> generateHistograms();
-	void trainClassifier();
+	double trainClassifier();
 };
 
 #endif

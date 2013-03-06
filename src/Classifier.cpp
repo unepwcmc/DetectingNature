@@ -36,19 +36,30 @@ Classifier::Classifier(vector<Histogram*> histograms,
 	m_classNames = classNames;
 	m_numTrainImages = trainImagesPerClass * classNames.size();
 	
-	m_svmProb = nullptr;
 	m_svmParams = nullptr;
+	m_svmProbs.resize(m_classNames.size(), nullptr);
 	m_svmModels.resize(m_classNames.size(), nullptr);
 }
 
 Classifier::~Classifier() {
-	if(m_svmProb != nullptr) {
-		for(unsigned int i = 0; i < m_numTrainImages; i++)
-			delete[] m_svmProb->x[i];
-		delete[] m_svmProb->x;
-		delete m_svmProb;
+	if(m_svmProbs[0] != nullptr) {
+		for(unsigned int i = 0; i < m_numTrainImages; i++) {
+			delete[] m_svmProbs[0]->x[i];
+		}
+		delete[] m_svmProbs[0]->x;
 	}
 	
+	for(unsigned int i = 0; i < m_classNames.size(); i++) {
+		if(m_svmModels[i] != nullptr) {
+			delete m_svmModels[i];
+		}
+		
+		if(m_svmProbs[i] != nullptr) {
+			delete[] m_svmProbs[i]->y;
+			delete m_svmProbs[i];
+		}
+	}
+
 	if(m_svmParams != nullptr) {
 		delete m_svmParams;
 	}
@@ -66,7 +77,7 @@ float* Classifier::flattenHistogramData() {
 	return data;
 }
 
-void Classifier::test() {
+double Classifier::test() {
 	OutputHelper::printMessage("Testing Classifier:");
 	ConfusionMatrix confMat(m_classNames);
 	
@@ -111,12 +122,16 @@ void Classifier::test() {
 		}
 	}
 	confMat.printMatrix();
+	return confMat.getDiagonalAverage();
 }
 
 double Classifier::intersectionKernel(Histogram* a, Histogram* b) {
 	double kernelVal = 0;
+	const double* dataA = a->getData();
+	const double* dataB = b->getData();
+	
 	for(unsigned int i = 0; i < a->getLength(); i++) {
-		kernelVal += min(a->getData()[i], b->getData()[i]);
+		kernelVal += min(dataA[i], dataB[i]);
 	}
 	return kernelVal;
 }
@@ -139,7 +154,7 @@ void Classifier::classify(double C) {
 	m_svmParams->C = C;
 	m_svmParams->eps = 1e-6;
 	m_svmParams->shrinking = 1;
-	m_svmParams->probability = 1;
+	m_svmParams->probability = 0;
 	m_svmParams->nr_weight = 0;
 
 	svm_node** kernel = new svm_node*[m_numTrainImages];
@@ -166,12 +181,12 @@ void Classifier::classify(double C) {
 	}
 	
 	for(unsigned int i = 0; i < m_classNames.size(); i++) {
-		m_svmProb = new svm_problem();
-		m_svmProb->l = m_numTrainImages;
-		m_svmProb->y = buildClassList(i);
-		m_svmProb->x = kernel;
+		m_svmProbs[i] = new svm_problem();
+		m_svmProbs[i]->l = m_numTrainImages;
+		m_svmProbs[i]->y = buildClassList(i);
+		m_svmProbs[i]->x = kernel;
 	
-		m_svmModels[i] = svm_train(m_svmProb, m_svmParams);
+		m_svmModels[i] = svm_train(m_svmProbs[i], m_svmParams);
 		//svm_save_model("model.out", m_svmModel);
 		cout << endl;
 	}
