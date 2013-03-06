@@ -91,7 +91,8 @@ void Classifier::test() {
 			double thisValue;
 			double thisClass =
 				svm_predict_values(m_svmModels[j], testNode, &thisValue);
-			thisValue = (thisClass == 0 && thisValue < 0) ?
+			thisValue = ((thisClass == 0 && thisValue < 0) ||
+				(thisClass == 1 && thisValue > 0)) ?
 				-thisValue : thisValue;
 						
 			if(thisValue < predictedValue) {
