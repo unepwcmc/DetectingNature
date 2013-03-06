@@ -24,7 +24,6 @@ ImageFeatures* FeatureExtractor::extractDsift(Image& img) {
 	VlDsiftFilter* filter =
 		vl_dsift_new_basic(img.getWidth(), img.getHeight(),
 			m_gridSpacing, m_patchSize / 4);
-	vl_dsift_set_flat_window(filter, true);
 	
 	vl_dsift_process(filter, img.getData());
 		

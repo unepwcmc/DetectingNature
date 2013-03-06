@@ -22,8 +22,8 @@ private:
 	VlKMeans* m_kmeans;
 	unsigned int m_numClusters;
 	
-	unsigned int calculateHistogramIndex(unsigned int level,
-		unsigned int cellX, unsigned int cellY);
+	unsigned int histogramIndex(unsigned int level,
+		unsigned int cellX, unsigned int cellY, unsigned int index);
 };
 
 #endif

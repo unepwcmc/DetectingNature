@@ -38,6 +38,7 @@ Classifier::Classifier(vector<Histogram*> histograms,
 	
 	m_svmProb = nullptr;
 	m_svmParams = nullptr;
+	m_svmModels.resize(m_classNames.size(), nullptr);
 }
 
 Classifier::~Classifier() {
@@ -82,18 +83,30 @@ void Classifier::test() {
 			testNode[j+1].value =
 				intersectionKernel(m_histograms[i], m_histograms[j]);
 		}
-		double probabilities[m_imageClasses.size()];
-		double predictedClass =
-			svm_predict_probability(m_svmModel, testNode, probabilities);
+		
+		double predictedClass = 0;
+		double predictedValue = 1e6;
+		
+		for(unsigned int j = 0; j < m_classNames.size(); j++) {
+			double thisValue;
+			double thisClass =
+				svm_predict_values(m_svmModels[j], testNode, &thisValue);
+			thisValue = (thisClass == 0 && thisValue < 0) ?
+				-thisValue : thisValue;
+						
+			if(thisValue < predictedValue) {
+				predictedValue = thisValue;
+				predictedClass = j;
+			}			
+		}
+		
 		confMat.addEntry(m_imageClasses[i], predictedClass);
 		
 		#pragma omp critical
 		{
 			currentIter++;
 			OutputHelper::printResults("Predicting image",
-				currentIter, totalImages, predictedClass,
-				*max_element(probabilities,
-					probabilities + m_imageClasses.size()));
+				currentIter, totalImages, predictedClass, predictedValue);
 		}
 	}
 	confMat.printMatrix();
@@ -105,6 +118,14 @@ double Classifier::intersectionKernel(Histogram* a, Histogram* b) {
 		kernelVal += min(a->getData()[i], b->getData()[i]);
 	}
 	return kernelVal;
+}
+
+double* Classifier::buildClassList(unsigned int desiredClass) {
+	double* classes = new double[m_numTrainImages];
+	for(unsigned int i = 0; i < m_numTrainImages; i++) {
+		classes[i] = (unsigned int)m_imageClasses[i] == desiredClass;
+	}
+	return classes;
 }
 
 void Classifier::classify(double C) {
@@ -120,21 +141,18 @@ void Classifier::classify(double C) {
 	m_svmParams->probability = 1;
 	m_svmParams->nr_weight = 0;
 
-	m_svmProb = new svm_problem();
-	m_svmProb->l = m_numTrainImages;
-	m_svmProb->y = &m_imageClasses[0];
-	m_svmProb->x = new svm_node*[m_numTrainImages];
+	svm_node** kernel = new svm_node*[m_numTrainImages];
 	
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
 	for(unsigned int i = 0; i < m_numTrainImages; i++) {
-		m_svmProb->x[i] = new svm_node[m_numTrainImages + 2];
-		m_svmProb->x[i][0].index = 0;
-		m_svmProb->x[i][0].value = i + 1;
+		kernel[i] = new svm_node[m_numTrainImages + 2];
+		kernel[i][0].index = 0;
+		kernel[i][0].value = i + 1;
 		#pragma omp parallel for
 		for(unsigned int j = 0; j < m_numTrainImages; j++) {				
-			m_svmProb->x[i][j+1].index = j + 1;
-			m_svmProb->x[i][j+1].value =
+			kernel[i][j+1].index = j + 1;
+			kernel[i][j+1].value =
 				intersectionKernel(m_histograms[i], m_histograms[j]);
 		}
 		
@@ -146,7 +164,14 @@ void Classifier::classify(double C) {
 		}
 	}
 	
-	m_svmModel = svm_train(m_svmProb, m_svmParams);
-	svm_save_model("model.out", m_svmModel);
-	cout << endl;
+	for(unsigned int i = 0; i < m_classNames.size(); i++) {
+		m_svmProb = new svm_problem();
+		m_svmProb->l = m_numTrainImages;
+		m_svmProb->y = buildClassList(i);
+		m_svmProb->x = kernel;
+	
+		m_svmModels[i] = svm_train(m_svmProb, m_svmParams);
+		//svm_save_model("model.out", m_svmModel);
+		cout << endl;
+	}
 }

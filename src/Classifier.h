@@ -26,13 +26,14 @@ private:
 	std::vector<double> m_imageClasses;
 	std::vector<std::string> m_classNames;
 	unsigned int m_numTrainImages;
+
+	std::vector<svm_model*> m_svmModels;
+	svm_parameter* m_svmParams;
+	svm_problem* m_svmProb;
 		
 	float* flattenHistogramData();
 	double intersectionKernel(Histogram* a, Histogram* b);
-	
-	svm_model* m_svmModel;
-	svm_parameter* m_svmParams;
-	svm_problem* m_svmProb;
+	double* buildClassList(unsigned int desiredClass);	
 };
 
 #endif

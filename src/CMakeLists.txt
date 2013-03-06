@@ -10,8 +10,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/..)
 set(CMAKE_CXX_FLAGS "-g -O2 -Wall -Wextra -Wno-unused-parameter -std=c++11 ${OpenMP_CXX_FLAGS}")
 
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories(../libs/vlfeat-0.9.16/include)
-link_directories(../libs/vlfeat-0.9.16/lib)
+include_directories(../libs/vlfeat-0.9.16)
+link_directories(../libs/vlfeat-0.9.16/bin/glnx86/)
 
 add_executable(DetectingNature OutputHelper.cpp Image.cpp ImageFeatures.cpp FeatureExtractor.cpp DatasetManager.cpp Histogram.cpp Codebook.cpp CodebookGenerator.cpp ConfusionMatrix.cpp Classifier.cpp ClassificationFramework.cpp main.cpp)
 

@@ -8,13 +8,13 @@
 class Histogram {
 public:
 	Histogram();
-	Histogram(float* data, unsigned int length);
+	Histogram(double* data, unsigned int length);
 	
 	unsigned int getLength() const;
-	const float* getData() const;
+	const double* getData() const;
 	
 private:
-	std::vector<float> m_data;
+	std::vector<double> m_data;
 	unsigned int m_length;
 	
 	// Boost serialization

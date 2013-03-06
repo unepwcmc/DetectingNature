@@ -10,22 +10,22 @@ Codebook::~Codebook() {
 	vl_kmeans_delete(m_kmeans);
 }
 
-unsigned int Codebook::calculateHistogramIndex(unsigned int level,
-	unsigned int cellX, unsigned int cellY) {
+unsigned int Codebook::histogramIndex(unsigned int level,
+	unsigned int cellX, unsigned int cellY, unsigned int index) {
 	
 	unsigned int numDivisions = pow(2, level);
 	
 	unsigned int levelIndex = m_numClusters * (pow(4, level) - 1) / 3;
 	unsigned int cellIndex = (cellX * numDivisions + cellY) * m_numClusters;
 	
-	return levelIndex + cellIndex;
+	return levelIndex + cellIndex + index;
 }
 
 Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 		unsigned int levels) {
 	
 	unsigned int totalLength = m_numClusters * (pow(4, levels + 1) - 1) / 3;
-	vector<float> histogram(totalLength, 0);
+	vector<double> histogram(totalLength, 0);
 	
 	int numFeatures = imageFeatures->getNumFeatures();
 	
@@ -36,41 +36,49 @@ Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 	for(int i = 0; i < numFeatures; i++) {
 		pair<int, int> position = imageFeatures->getCoordinates(i);
 		
-		for(unsigned int l = 0; l <= levels; l++) {
-			int numDivisions = pow(2, l);
-			
-			unsigned int currentCellX = position.first /
-				(float)imageFeatures->getWidth() * numDivisions;
-			unsigned int currentCellY = position.second /
-				(float)imageFeatures->getHeight() * numDivisions;
+		int numDivisions = pow(2, levels);
+		
+		unsigned int currentCellX = position.first /
+			(float)imageFeatures->getWidth() * numDivisions;
+		unsigned int currentCellY = position.second /
+			(float)imageFeatures->getHeight() * numDivisions;
 
-			int histogramIndex = calculateHistogramIndex(
-				l, currentCellX, currentCellY);
-
-			histogram[histogramIndex + assignments[i]]++;
-		}
+		//#pragma omp critical
+		//cout << levels << " " << currentCellX << " " << currentCellY << " " << assignments[i] << endl;
+		histogram[histogramIndex(
+			levels, currentCellX, currentCellY, assignments[i])]++;
 	}
 	delete[] assignments;
-
 	
-	for(unsigned int l = 0; l <= levels; l++) {
+	for(int l = levels; l >= 0; l--) {
 		unsigned int numDivisions = pow(2, l);
-		float levelWeight = (l == 0) ?
+		for(unsigned int i = 0; i < numDivisions; i++) {
+			for(unsigned int j = 0; j < numDivisions; j++) {			
+				for(unsigned int k = 0; k < m_numClusters; k++) {
+					if(l == levels) {
+						histogram[histogramIndex(l, i, j, k)] /= numFeatures;
+					} else {
+						histogram[histogramIndex(l, i, j, k)] =
+							histogram[histogramIndex(l+1, i*2, j*2, k)] +
+							histogram[histogramIndex(l+1, i*2+1, j*2, k)] +
+							histogram[histogramIndex(l+1, i*2, j*2+1, k)] +
+							histogram[histogramIndex(l+1, i*2+1, j*2+1, k)];
+					}
+				}
+			}
+		}
+	}
+	
+	for(int l = levels; l >= 0; l--) {	
+		double levelWeight = (l == 0) ?
 			1.0 / pow(2, levels) :
 			1.0 / pow(2, levels - l + 1);
-
+		
+		unsigned int numDivisions = pow(2, l);
 		for(unsigned int i = 0; i < numDivisions; i++) {
-			for(unsigned int j = 0; j < numDivisions; j++) {
-				float histogramTotal = 0;
-				unsigned int histogramIndex = calculateHistogramIndex(l, i, j);
-				
+			for(unsigned int j = 0; j < numDivisions; j++) {			
 				for(unsigned int k = 0; k < m_numClusters; k++) {
-					histogramTotal += histogram[histogramIndex + k];
-				}
-				
-				for(unsigned int k = 0; k < m_numClusters; k++) {
-					histogram[histogramIndex + k] /= histogramTotal;
-					histogram[histogramIndex + k] *= levelWeight;
+					histogram[histogramIndex(l, i, j, k)] *= levelWeight;
 				}
 			}
 		}

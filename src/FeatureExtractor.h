@@ -2,6 +2,7 @@
 #define FEATURE_EXTRACTOR_H
 
 extern "C" {
+	#include <vl/imopv.h>
 	#include <vl/dsift.h>
 	#include <vl/hog.h>
 }
