@@ -8,6 +8,13 @@ CacheHelper::CacheHelper(Settings& settings) {
 string CacheHelper::getCacheFolder(string filename,
 		const type_info& dataType) {
 	
+	string basePath = "cache/" + m_settings.datasetPath +
+			"/" + dataType.name();
+	
+	if(dataType == typeid(DatasetManager)) {
+		return basePath + "/";
+	}
+	
 	stringstream cacheNameStream;
 	cacheNameStream	<< 
 		"_" << m_settings.colourspace <<
@@ -16,8 +23,7 @@ string CacheHelper::getCacheFolder(string filename,
 		"_" << m_settings.patchSize;
 		
 	if(dataType == typeid(ImageFeatures)) {
-		return "cache/" + m_settings.datasetPath +
-			"/" + dataType.name() + cacheNameStream.str() + "/";
+		return basePath + cacheNameStream.str() + "/";
 	}
 	
 	cacheNameStream	<<
@@ -25,11 +31,6 @@ string CacheHelper::getCacheFolder(string filename,
 		"_" << m_settings.codewords <<
 		"_" << m_settings.pyramidLevels;
 		
-	if(dataType == typeid(Histogram)) {
-		return "cache/" + m_settings.datasetPath +
-			"/" + dataType.name() + cacheNameStream.str() + "/";
-	}
 	
-	return "cache/" + m_settings.datasetPath +
-			"/" + dataType.name() + "/";
+	return basePath + cacheNameStream.str() + "/";
 }

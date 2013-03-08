@@ -10,7 +10,7 @@
 
 #include "Settings.h"
 #include "ImageFeatures.h"
-#include "Histogram.h"
+#include "DatasetManager.h"
 
 class CacheHelper {
 public:

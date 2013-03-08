@@ -40,5 +40,6 @@ Codebook* CodebookGenerator::generate(
 	vl_kmeans_cluster(kmeans, &descriptors[0],
 		descriptorSize, descriptors.size() / descriptorSize, numClusters);
 	
-	return new Codebook(kmeans, numClusters);
+	return new Codebook((const float*)vl_kmeans_get_centers(kmeans),
+		numClusters, descriptorSize);
 }

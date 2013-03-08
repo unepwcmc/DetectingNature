@@ -33,7 +33,7 @@ private:
 		
 	float* flattenHistogramData();
 	double intersectionKernel(Histogram* a, Histogram* b);
-	double* buildClassList(unsigned int desiredClass);	
+	double* buildClassList(unsigned int desiredClass);
 };
 
 #endif

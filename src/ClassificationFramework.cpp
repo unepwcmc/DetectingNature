@@ -59,9 +59,13 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 	
 	OutputHelper::printMessage("Generating histograms:");
 			
-	CodebookGenerator codebookGenerator(features);
-	Codebook* codebook = codebookGenerator.generate(
-		m_settings.textonImages, m_settings.codewords);
+	Codebook* codebook = m_cacheHelper->load<Codebook>("codebook");
+	if(codebook == nullptr) {
+		CodebookGenerator codebookGenerator(features);
+		codebook = codebookGenerator.generate(
+			m_settings.textonImages, m_settings.codewords);
+		m_cacheHelper->save<Codebook>("codebook", codebook);
+	}
 
 	unsigned int currentIter = 0;
 	#pragma omp parallel for

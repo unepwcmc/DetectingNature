@@ -1,13 +1,24 @@
 #include "Codebook.h"
 using namespace std;
 
-Codebook::Codebook(VlKMeans* kmeans, unsigned int numClusters) {
-	m_kmeans = kmeans;
+Codebook::Codebook() {
+	m_numClusters = 0;
+}
+
+Codebook::Codebook(const float* clusterCenters,
+		unsigned int numClusters, unsigned int dataSize) {
+	
+	m_kmeans = nullptr;
+	unsigned int totalSize = numClusters * dataSize;
+	m_centers.reserve(totalSize);
+	copy(clusterCenters, clusterCenters + totalSize, back_inserter(m_centers));
 	m_numClusters = numClusters;
 }
 
 Codebook::~Codebook() {
-	vl_kmeans_delete(m_kmeans);
+	if(m_kmeans != nullptr) {
+		vl_kmeans_delete(m_kmeans);
+	}
 }
 
 unsigned int Codebook::histogramIndex(unsigned int level,
