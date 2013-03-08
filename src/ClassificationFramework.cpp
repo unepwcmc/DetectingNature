@@ -3,23 +3,18 @@ using namespace std;
 
 ClassificationFramework::ClassificationFramework(Settings &settings) {
 	m_settings = settings;
+	
+	m_cacheHelper = new CacheHelper(m_settings);
 
 	m_cachePath = "cache/" + settings.datasetPath;
 	if(!boost::filesystem::exists(m_cachePath)) {
 		boost::filesystem::create_directories(m_cachePath);
 	}
 	
-	string datasetCache = m_cachePath + "/dataset";
-	if(!boost::filesystem::exists(datasetCache)) {
+	m_datasetManager = m_cacheHelper->load<DatasetManager>("dataset");
+	if(m_datasetManager == nullptr) {
 		m_datasetManager = new DatasetManager(settings.datasetPath);
-		
-		ofstream ofs(datasetCache);
-		boost::archive::binary_oarchive oa(ofs);
-		oa << m_datasetManager;
-	} else {
-		ifstream ifs(datasetCache);
-		boost::archive::binary_iarchive ia(ifs);
-		ia >> m_datasetManager;
+		m_cacheHelper->save<DatasetManager>("dataset", m_datasetManager);
 	}
 	
 	m_imagePaths = m_datasetManager->listFiles();
@@ -32,16 +27,6 @@ ClassificationFramework::~ClassificationFramework() {
 vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
 	OutputHelper::printMessage("Extracting features:");
 	
-	stringstream cacheNameStream;
-	cacheNameStream	<< 
-		"_" << m_settings.colourspace <<
-		"_" << m_settings.featureType <<
-		"_" << m_settings.gridSpacing << "_" << m_settings.patchSize;
-	string cacheFolder = m_cachePath + "/descriptors" + cacheNameStream.str();
-	if(!boost::filesystem::exists(cacheFolder)) {
-		boost::filesystem::create_directories(cacheFolder);
-	}
-	
 	FeatureExtractor featureExtractor(m_settings.featureType,
 		m_settings.gridSpacing, m_settings.patchSize);
 	vector<ImageFeatures*> features(m_imagePaths.size(), nullptr);	
@@ -49,19 +34,11 @@ vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
 	for(unsigned int i = 0; i < m_imagePaths.size(); i++) {
-		string cacheFilename = cacheFolder + "/" +
-			boost::replace_all_copy(m_imagePaths[i], "/", "_");
-		if(!boost::filesystem::exists(cacheFilename)) {
+		features[i] = m_cacheHelper->load<ImageFeatures>(m_imagePaths[i]);
+		if(features[i] == nullptr) {
 			Image img(m_imagePaths[i], m_settings.colourspace);
 			features[i] = featureExtractor.extract(img);
-			
-			ofstream ofs(cacheFilename);
-			boost::archive::binary_oarchive oa(ofs);
-			oa << features[i];
-		} else {
-			ifstream ifs(cacheFilename);
-			boost::archive::binary_iarchive ia(ifs);
-			ia >> features[i];
+			m_cacheHelper->save<ImageFeatures>(m_imagePaths[i], features[i]);
 		}
 		
 		#pragma omp critical
@@ -77,16 +54,7 @@ vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
 }
 
 vector<Histogram*> ClassificationFramework::generateHistograms() {
-	stringstream cacheNameStream;
-	cacheNameStream	<< "_" << m_settings.textonImages <<
-		"_" << m_settings.codewords << "_" << m_settings.pyramidLevels;
-	string cacheFolder = m_cachePath + "/histograms" + cacheNameStream.str();
-	if(!boost::filesystem::exists(cacheFolder)) {
-		boost::filesystem::create_directories(cacheFolder);
-	}
-	
 	vector<Histogram*> histograms(m_imagePaths.size(), nullptr);
-	
 	vector<ImageFeatures*> features = generateFeatures(); 
 	
 	OutputHelper::printMessage("Generating histograms:");
@@ -97,21 +65,12 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
-	for(unsigned int i = 0; i < m_imagePaths.size(); i++) {
-		string cacheFilename = cacheFolder + "/" +
-			boost::replace_all_copy(m_imagePaths[i], "/", "_");
-			
-		if(!boost::filesystem::exists(cacheFilename)) {
+	for(unsigned int i = 0; i < m_imagePaths.size(); i++) {	
+		histograms[i] = m_cacheHelper->load<Histogram>(m_imagePaths[i]);
+		if(histograms[i] == nullptr) {
 			histograms[i] = codebook->computeHistogram(features[i],
 				m_settings.pyramidLevels);
-				
-			ofstream ofs(cacheFilename);
-			boost::archive::binary_oarchive oa(ofs);
-			oa << histograms[i];
-		} else {
-			ifstream ifs(cacheFilename);
-			boost::archive::binary_iarchive ia(ifs);
-			ia >> histograms[i];
+			m_cacheHelper->save<Histogram>(m_imagePaths[i], histograms[i]);
 		}
 		
 		#pragma omp critical

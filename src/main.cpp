@@ -1,7 +1,7 @@
 #include "ClassificationFramework.h"
 
 int main() {
-	ClassificationFramework::Settings settings;
+	Settings settings;
 	settings.datasetPath = "data/OT-2";
 	
 	ClassificationFramework cf(settings);
