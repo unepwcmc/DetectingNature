@@ -2,7 +2,7 @@
 
 int main() {
 	ClassificationFramework::Settings settings;
-	settings.datasetPath = "data/scene_categories";
+	settings.datasetPath = "data/OT-2";
 	
 	ClassificationFramework cf(settings);
 	cf.run();

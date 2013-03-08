@@ -17,6 +17,9 @@ public:
 	struct Settings {
 		std::string datasetPath;
 		
+		// Image settings
+		Image::Colourspace colourspace = Image::OPPONENT;
+		
 		// Feature settings
 		FeatureExtractor::Type featureType = FeatureExtractor::DSIFT;
 		unsigned int gridSpacing = 8;

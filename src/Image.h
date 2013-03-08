@@ -6,17 +6,20 @@
 
 class Image {
 public:
-	Image(std::string filename);
+	enum Colourspace {GREYSCALE, OPPONENT};
+
+	Image(std::string filename, Colourspace colour);
 	~Image();
 	
+	unsigned int getNumChannels() const;
 	unsigned int getWidth() const;
 	unsigned int getHeight() const;
-	float const* getData() const;
+	float const* getData(unsigned int channel) const;
 
 private:
 	unsigned int m_width;
 	unsigned int m_height;
-	float* m_data;
+	std::vector<float*> m_data;
 };
 
 #endif

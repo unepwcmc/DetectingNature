@@ -33,44 +33,46 @@ vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
 	OutputHelper::printMessage("Extracting features:");
 	
 	stringstream cacheNameStream;
-	cacheNameStream	<< "_" << m_settings.featureType <<
+	cacheNameStream	<< 
+		"_" << m_settings.colourspace <<
+		"_" << m_settings.featureType <<
 		"_" << m_settings.gridSpacing << "_" << m_settings.patchSize;
-	string cacheFilename = m_cachePath + "/descriptors" + cacheNameStream.str();
-
-	FeatureExtractor featureExtractor(m_settings.featureType,
-		m_settings.gridSpacing, m_settings.patchSize);
-	vector<ImageFeatures*> features(m_imagePaths.size(), nullptr);
-
-	if(!boost::filesystem::exists(cacheFilename)) {
-		unsigned int currentIter = 0;
-		#pragma omp parallel for
-		for(unsigned int i = 0; i < m_imagePaths.size(); i++) {		
-			Image img(m_imagePaths[i]);
-			ImageFeatures* imageFeatures = featureExtractor.extract(img);
-			features[i] = imageFeatures;
-					
-			#pragma omp critical
-			{
-				currentIter++;
-				OutputHelper::printProgress("Processing image "
-					+ DatasetManager::getFilename(m_imagePaths[i]),
-					currentIter, m_imagePaths.size());
-			}
-		}
-
-		OutputHelper::printInlineMessage("Saving to " + cacheFilename, 1);
-		ofstream ofs(cacheFilename);
-		boost::archive::binary_oarchive oa(ofs);
-		oa << features;
-		OutputHelper::printMessage("Saved to " + cacheFilename, 1);
-	} else {
-		OutputHelper::printInlineMessage("Loading from " + cacheFilename, 1);
-		ifstream ifs(cacheFilename);
-		boost::archive::binary_iarchive ia(ifs);
-		ia >> features;
-		OutputHelper::printMessage("Loaded from " + cacheFilename, 1);
+	string cacheFolder = m_cachePath + "/descriptors" + cacheNameStream.str();
+	if(!boost::filesystem::exists(cacheFolder)) {
+		boost::filesystem::create_directories(cacheFolder);
 	}
 	
+	FeatureExtractor featureExtractor(m_settings.featureType,
+		m_settings.gridSpacing, m_settings.patchSize);
+	vector<ImageFeatures*> features(m_imagePaths.size(), nullptr);	
+
+	unsigned int currentIter = 0;
+	#pragma omp parallel for
+	for(unsigned int i = 0; i < m_imagePaths.size(); i++) {
+		string cacheFilename = cacheFolder + "/" +
+			boost::replace_all_copy(m_imagePaths[i], "/", "_");
+		if(!boost::filesystem::exists(cacheFilename)) {
+			Image img(m_imagePaths[i], m_settings.colourspace);
+			features[i] = featureExtractor.extract(img);
+			
+			ofstream ofs(cacheFilename);
+			boost::archive::binary_oarchive oa(ofs);
+			oa << features[i];
+		} else {
+			ifstream ifs(cacheFilename);
+			boost::archive::binary_iarchive ia(ifs);
+			ia >> features[i];
+		}
+		
+		#pragma omp critical
+		{
+			currentIter++;
+			OutputHelper::printProgress("Processing image "
+				+ DatasetManager::getFilename(m_imagePaths[i]),
+				currentIter, m_imagePaths.size());
+		}
+	}
+
 	return features;
 }
 
@@ -78,52 +80,52 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 	stringstream cacheNameStream;
 	cacheNameStream	<< "_" << m_settings.textonImages <<
 		"_" << m_settings.codewords << "_" << m_settings.pyramidLevels;
-	string cacheFilename = m_cachePath + "/histograms" + cacheNameStream.str();
+	string cacheFolder = m_cachePath + "/histograms" + cacheNameStream.str();
+	if(!boost::filesystem::exists(cacheFolder)) {
+		boost::filesystem::create_directories(cacheFolder);
+	}
 	
 	vector<Histogram*> histograms(m_imagePaths.size(), nullptr);
 	
-	if(!boost::filesystem::exists(cacheFilename)) {
-		vector<ImageFeatures*> features = generateFeatures();
-		
-		OutputHelper::printMessage("Generating histograms:");
-				
-		CodebookGenerator codebookGenerator(features);
-		Codebook* codebook = codebookGenerator.generate(
-			m_settings.textonImages, m_settings.codewords);
+	vector<ImageFeatures*> features = generateFeatures(); 
 	
-		unsigned int currentIter = 0;
-		#pragma omp parallel for
-		for(unsigned int i = 0; i < m_imagePaths.size(); i++) {
-			Histogram* hist = codebook->computeHistogram(features[i],
-				m_settings.pyramidLevels);
-			histograms[i] = hist;
+	OutputHelper::printMessage("Generating histograms:");
 			
-			#pragma omp critical
-			{
-				currentIter++;
-				OutputHelper::printProgress("Processing image "
-					+ DatasetManager::getFilename(m_imagePaths[i]),
-					currentIter, m_imagePaths.size());
-			}
+	CodebookGenerator codebookGenerator(features);
+	Codebook* codebook = codebookGenerator.generate(
+		m_settings.textonImages, m_settings.codewords);
+
+	unsigned int currentIter = 0;
+	#pragma omp parallel for
+	for(unsigned int i = 0; i < m_imagePaths.size(); i++) {
+		string cacheFilename = cacheFolder + "/" +
+			boost::replace_all_copy(m_imagePaths[i], "/", "_");
+			
+		if(!boost::filesystem::exists(cacheFilename)) {
+			histograms[i] = codebook->computeHistogram(features[i],
+				m_settings.pyramidLevels);
+				
+			ofstream ofs(cacheFilename);
+			boost::archive::binary_oarchive oa(ofs);
+			oa << histograms[i];
+		} else {
+			ifstream ifs(cacheFilename);
+			boost::archive::binary_iarchive ia(ifs);
+			ia >> histograms[i];
 		}
 		
-		for(unsigned int i = 0; i < histograms.size(); i++)
-			delete features[i];
-		
-		OutputHelper::printInlineMessage("Saving to " + cacheFilename, 1);
-		ofstream ofs(cacheFilename);
-		boost::archive::binary_oarchive oa(ofs);
-		oa << histograms;
-		OutputHelper::printMessage("Saved to " + cacheFilename, 1);
-	} else {
-		OutputHelper::printMessage("Generating histograms:");
-		OutputHelper::printInlineMessage("Loading from " + cacheFilename, 1);
-		ifstream ifs(cacheFilename);
-		boost::archive::binary_iarchive ia(ifs);
-		ia >> histograms;
-		OutputHelper::printMessage("Loaded from " + cacheFilename, 1);
+		#pragma omp critical
+		{
+			currentIter++;
+			OutputHelper::printProgress("Processing image "
+				+ DatasetManager::getFilename(m_imagePaths[i]),
+				currentIter, m_imagePaths.size());
+		}
 	}
 	
+	for(unsigned int i = 0; i < histograms.size(); i++)
+		delete features[i];
+			
 	return histograms;
 }
 

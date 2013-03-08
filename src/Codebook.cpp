@@ -43,8 +43,6 @@ Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 		unsigned int currentCellY = position.second /
 			(float)imageFeatures->getHeight() * numDivisions;
 
-		//#pragma omp critical
-		//cout << levels << " " << currentCellX << " " << currentCellY << " " << assignments[i] << endl;
 		histogram[histogramIndex(
 			levels, currentCellX, currentCellY, assignments[i])]++;
 	}
@@ -55,7 +53,7 @@ Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 		for(unsigned int i = 0; i < numDivisions; i++) {
 			for(unsigned int j = 0; j < numDivisions; j++) {			
 				for(unsigned int k = 0; k < m_numClusters; k++) {
-					if(l == levels) {
+					if((unsigned int)l == levels) {
 						histogram[histogramIndex(l, i, j, k)] /= numFeatures;
 					} else {
 						histogram[histogramIndex(l, i, j, k)] =

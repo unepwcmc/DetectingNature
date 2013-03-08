@@ -25,21 +25,26 @@ ImageFeatures* FeatureExtractor::extractDsift(Image& img) {
 		vl_dsift_new_basic(img.getWidth(), img.getHeight(),
 			m_gridSpacing, m_patchSize / 4);
 	
-	vl_dsift_process(filter, img.getData());
-		
-	unsigned int descriptorSize = vl_dsift_get_descriptor_size(filter);
-	unsigned int numDescriptors = vl_dsift_get_keypoint_num(filter);
-	float const* descriptors = vl_dsift_get_descriptors(filter);
-	
-	vector<pair<int, int> > coordinates;
-	const VlDsiftKeypoint* keypoints = vl_dsift_get_keypoints(filter);
-	for(unsigned int i = 0; i < numDescriptors; i++) {
-		coordinates.push_back(make_pair(keypoints[i].x, keypoints[i].y));
-	}
-	
 	ImageFeatures* imageFeatures =
-		new ImageFeatures(descriptors, descriptorSize, numDescriptors,
-			img.getWidth(), img.getHeight(), coordinates);
+		new ImageFeatures(
+			img.getWidth(), img.getHeight(), img.getNumChannels());
+	
+	for(unsigned int i = 0; i < img.getNumChannels(); i++) {
+		vl_dsift_process(filter, img.getData(i));
+		
+		unsigned int descriptorSize = vl_dsift_get_descriptor_size(filter);
+		unsigned int numDescriptors = vl_dsift_get_keypoint_num(filter);
+		float const* descriptors = vl_dsift_get_descriptors(filter);
+	
+		vector<pair<int, int> > coordinates;
+		const VlDsiftKeypoint* keypoints = vl_dsift_get_keypoints(filter);
+		for(unsigned int j = 0; j < numDescriptors; j++) {
+			coordinates.push_back(make_pair(keypoints[j].x, keypoints[j].y));
+		}
+	
+		imageFeatures->addFeatures(i, descriptors, descriptorSize,
+			numDescriptors, coordinates);
+	}
 	
 	vl_dsift_delete(filter);
 	

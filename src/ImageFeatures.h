@@ -8,11 +8,12 @@
 class ImageFeatures {
 public:
 	ImageFeatures();
-	ImageFeatures(float const* features,
-		unsigned int descriptorSize, unsigned int numFeatures,
-		unsigned int width, unsigned int height,
-		std::vector<std::pair<int, int> > coordinates);
+	ImageFeatures(unsigned int width, unsigned int height,
+		unsigned int numChannels);
 	
+	void addFeatures(unsigned int channel, float const* features,
+		unsigned int descriptorSize, unsigned int numFeatures,
+		std::vector<std::pair<int, int> > coordinates);
 	unsigned int getNumFeatures() const;
 	unsigned int getDescriptorSize() const;
 	const float* getFeature(unsigned int index) const;
@@ -22,6 +23,7 @@ public:
 	unsigned int getHeight() const;
 	
 private:
+	unsigned int m_numChannels;
 	unsigned int m_descriptorSize;
 	unsigned int m_numFeatures;
 	std::vector<float> m_features;
@@ -34,6 +36,7 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
+		ar & m_numChannels;
 		ar & m_descriptorSize;
 		ar & m_numFeatures;
 		ar & m_features;

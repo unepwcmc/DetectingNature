@@ -2,22 +2,45 @@
 #include "iostream"
 using namespace std;
 
-Image::Image(std::string filename) {
-	cv::Mat cvImg = cv::imread(filename, 0);
+Image::Image(std::string filename, Colourspace colour) {
+	cv::Mat cvImg = cv::imread(filename, colour != GREYSCALE);
 
 	m_width = cvImg.rows;
 	m_height = cvImg.cols;
 
-	m_data = new float[m_width * m_height];	
-	for(unsigned int i = 0; i < m_height; i++) {
-		for(unsigned int j = 0; j < m_width; j++) {
-			m_data[i * m_width + j] = cvImg.at<unsigned char>(j, i);
+	unsigned int numChannels = colour == GREYSCALE ? 1 : 3;
+	for(unsigned int i = 0; i < numChannels; i++) {
+		m_data.push_back(new float[m_width * m_height]);
+	}
+	
+	cv::Point3_<unsigned char> point;
+	for(unsigned int y = 0; y < m_height; y++) {
+		for(unsigned int x = 0; x < m_width; x++) {
+			switch(colour) {
+			case OPPONENT:
+				point =	cvImg.at<cv::Point3_<unsigned char> >(x, y);
+				m_data[0][y * m_width + x] = (point.z - point.y) / sqrt(2);
+				m_data[1][y * m_width + x] =
+					(point.z + point.y - (2 * point.x)) / sqrt(6);
+				m_data[2][y * m_width + x] =
+					(point.z + point.y + point.x) / sqrt(3);
+				break;
+			case GREYSCALE:
+			default:
+				m_data[0][y * m_width + x] = cvImg.at<unsigned char>(x, y);
+			}
 		}
 	}
 }
 
 Image::~Image() {
-	delete[] m_data;
+	for(unsigned int i = 0; i < m_data.size(); i++) {
+		delete[] m_data[i];
+	}
+}
+
+unsigned int Image::getNumChannels() const {
+	return m_data.size();
 }
 
 unsigned int Image::getWidth() const {
@@ -28,6 +51,6 @@ unsigned int Image::getHeight() const {
 	return m_height;
 }
 
-float const* Image::getData() const {
-	return m_data;
+float const* Image::getData(unsigned int channel) const {
+	return m_data[channel];
 }

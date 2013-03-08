@@ -69,3 +69,7 @@ vector<unsigned int> DatasetManager::getImageClasses() const {
 string DatasetManager::getDatasetPath() const {
 	return m_datasetPath;
 }
+
+string DatasetManager::getCachePath() const {
+	return "cache/" + m_datasetPath;
+}

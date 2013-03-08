@@ -25,6 +25,7 @@ public:
 	std::vector<std::string> listFiles() const;
 	std::vector<unsigned int> getImageClasses() const;
 	std::string getDatasetPath() const;
+	std::string getCachePath() const;
 		
 private:
 	void preloadFileLists();
