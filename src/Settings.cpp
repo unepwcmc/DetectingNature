@@ -33,6 +33,6 @@ Settings::Settings(std::string filename) {
 	
 	pyramidLevels = tree.get("settings.histograms.pyramidlevels", 2);
 	
-	C = tree.get("settings.classifier.c", 10);
+	C = tree.get("settings.classifier.c", 10.0);
 	trainImagesPerClass = tree.get("settings.classifier.imagesperclass", 100);
 }
