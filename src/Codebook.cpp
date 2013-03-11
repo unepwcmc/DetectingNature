@@ -2,6 +2,7 @@
 using namespace std;
 
 Codebook::Codebook() {
+	m_kmeans = nullptr;
 	m_numClusters = 0;
 }
 
@@ -34,6 +35,13 @@ unsigned int Codebook::histogramIndex(unsigned int level,
 
 Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 		unsigned int levels) {
+	
+	if(m_kmeans == nullptr) {
+		m_kmeans = vl_kmeans_new(VL_TYPE_FLOAT, VlDistanceL2);
+		vl_kmeans_set_algorithm(m_kmeans, VlKMeansElkan);
+		vl_kmeans_set_centers(m_kmeans, &m_centers[0],
+			m_centers.size() / m_numClusters, m_numClusters);
+	}
 	
 	unsigned int totalLength = m_numClusters * (pow(4, levels + 1) - 1) / 3;
 	vector<double> histogram(totalLength, 0);

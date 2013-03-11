@@ -24,8 +24,10 @@ private:
 	std::vector<std::string> m_imagePaths;
 	std::string m_cachePath;
 	
-	std::vector<ImageFeatures*> generateFeatures();
-	std::vector<Histogram*> generateHistograms();
+	std::vector<ImageFeatures*> generateFeatures(
+		std::vector<std::string> imagePaths);
+	std::vector<Histogram*> generateHistograms(
+		std::vector<std::string> imagePaths);
 	double trainClassifier();
 };
 

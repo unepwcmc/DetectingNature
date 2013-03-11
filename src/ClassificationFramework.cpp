@@ -5,57 +5,55 @@ ClassificationFramework::ClassificationFramework(Settings &settings) {
 	m_settings = settings;
 	
 	m_cacheHelper = new CacheHelper(m_settings);
-
-	m_cachePath = "cache/" + settings.datasetPath;
-	if(!boost::filesystem::exists(m_cachePath)) {
-		boost::filesystem::create_directories(m_cachePath);
-	}
 	
 	m_datasetManager = m_cacheHelper->load<DatasetManager>("dataset");
 	if(m_datasetManager == nullptr) {
-		m_datasetManager = new DatasetManager(settings.datasetPath);
+		m_datasetManager = new DatasetManager(settings.datasetPath,
+			settings.trainImagesPerClass);
 		m_cacheHelper->save<DatasetManager>("dataset", m_datasetManager);
 	}
-	
-	m_imagePaths = m_datasetManager->listFiles();
 }
 
 ClassificationFramework::~ClassificationFramework() {
 	delete m_datasetManager;
 }
 
-vector<ImageFeatures*> ClassificationFramework::generateFeatures() {
+vector<ImageFeatures*> ClassificationFramework::generateFeatures(
+		vector<string> imagePaths) {
+		
 	OutputHelper::printMessage("Extracting features:");
 	
 	FeatureExtractor featureExtractor(m_settings.featureType,
 		m_settings.gridSpacing, m_settings.patchSize);
-	vector<ImageFeatures*> features(m_imagePaths.size(), nullptr);	
+	vector<ImageFeatures*> features(imagePaths.size(), nullptr);
 
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
-	for(unsigned int i = 0; i < m_imagePaths.size(); i++) {
-		features[i] = m_cacheHelper->load<ImageFeatures>(m_imagePaths[i]);
+	for(unsigned int i = 0; i < imagePaths.size(); i++) {
+		features[i] = m_cacheHelper->load<ImageFeatures>(imagePaths[i]);
 		if(features[i] == nullptr) {
-			Image img(m_imagePaths[i], m_settings.colourspace);
+			Image img(imagePaths[i], m_settings.colourspace);
 			features[i] = featureExtractor.extract(img);
-			m_cacheHelper->save<ImageFeatures>(m_imagePaths[i], features[i]);
+			m_cacheHelper->save<ImageFeatures>(imagePaths[i], features[i]);
 		}
 		
 		#pragma omp critical
 		{
 			currentIter++;
 			OutputHelper::printProgress("Processing image "
-				+ DatasetManager::getFilename(m_imagePaths[i]),
-				currentIter, m_imagePaths.size());
+				+ DatasetManager::getFilename(imagePaths[i]),
+				currentIter, imagePaths.size());
 		}
 	}
 
 	return features;
 }
 
-vector<Histogram*> ClassificationFramework::generateHistograms() {
-	vector<Histogram*> histograms(m_imagePaths.size(), nullptr);
-	vector<ImageFeatures*> features = generateFeatures(); 
+vector<Histogram*> ClassificationFramework::generateHistograms(
+		vector<string> imagePaths) {
+		
+	vector<Histogram*> histograms(imagePaths.size(), nullptr);
+	vector<ImageFeatures*> features = generateFeatures(imagePaths);
 	
 	OutputHelper::printMessage("Generating histograms:");
 			
@@ -69,23 +67,24 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
-	for(unsigned int i = 0; i < m_imagePaths.size(); i++) {	
-		histograms[i] = m_cacheHelper->load<Histogram>(m_imagePaths[i]);
+	for(unsigned int i = 0; i < imagePaths.size(); i++) {	
+		histograms[i] = m_cacheHelper->load<Histogram>(imagePaths[i]);
 		if(histograms[i] == nullptr) {
 			histograms[i] = codebook->computeHistogram(features[i],
 				m_settings.pyramidLevels);
-			m_cacheHelper->save<Histogram>(m_imagePaths[i], histograms[i]);
+			m_cacheHelper->save<Histogram>(imagePaths[i], histograms[i]);
 		}
 		
 		#pragma omp critical
 		{
 			currentIter++;
 			OutputHelper::printProgress("Processing image "
-				+ DatasetManager::getFilename(m_imagePaths[i]),
-				currentIter, m_imagePaths.size());
+				+ DatasetManager::getFilename(imagePaths[i]),
+				currentIter, imagePaths.size());
 		}
 	}
 	
+	delete codebook;
 	for(unsigned int i = 0; i < histograms.size(); i++)
 		delete features[i];
 			
@@ -93,18 +92,23 @@ vector<Histogram*> ClassificationFramework::generateHistograms() {
 }
 
 double ClassificationFramework::trainClassifier() {
-	vector<Histogram*> histograms = generateHistograms();
+	vector<Histogram*> trainHistograms =
+		generateHistograms(m_datasetManager->getTrainData());
 
-	vector<unsigned int> imageClasses = m_datasetManager->getImageClasses();
 	vector<string> classNames = m_datasetManager->listClasses();
+	Classifier classifier(classNames);
+	classifier.train(trainHistograms,
+		m_datasetManager->getTrainClasses(), m_settings.C);
 	
-	Classifier classifier(histograms, imageClasses, classNames,
-		m_settings.trainImagesPerClass);
-	classifier.classify(m_settings.C);
-	double result = classifier.test();
+	vector<Histogram*> testHistograms =
+		generateHistograms(m_datasetManager->getTestData());
+	double result =
+		classifier.test(testHistograms, m_datasetManager->getTestClasses());
 	
-	for(unsigned int i = 0; i < histograms.size(); i++)
-		delete histograms[i];
+	for(unsigned int i = 0; i < trainHistograms.size(); i++)
+		delete trainHistograms[i];
+	for(unsigned int i = 0; i < testHistograms.size(); i++)
+		delete testHistograms[i];
 
 	return result;
 }

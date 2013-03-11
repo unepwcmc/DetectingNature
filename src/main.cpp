@@ -2,7 +2,8 @@
 
 int main() {
 	Settings settings;
-	settings.datasetPath = "data/OT-2";
+	settings.datasetPath = "data/OT-8";
+	settings.colourspace = Image::HSV;
 	
 	ClassificationFramework cf(settings);
 	cf.run();

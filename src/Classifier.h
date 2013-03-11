@@ -13,19 +13,18 @@
 
 class Classifier {
 public:
-	Classifier(std::vector<Histogram*> histograms,
-		std::vector<unsigned int> imageClasses,
-		std::vector<std::string> classNames, unsigned int trainImagesPerClass);
+	Classifier(std::vector<std::string> classNames);
 	~Classifier();
 		
-	void classify(double C);
-	double test();
+	void train(std::vector<Histogram*> histograms,
+		std::vector<unsigned int> imageClasses, double C);
+	double test(std::vector<Histogram*> histograms,
+		std::vector<unsigned int> imageClasses);
 
 private:
-	std::vector<Histogram*> m_histograms;
-	std::vector<double> m_imageClasses;
+	std::vector<Histogram*> m_trainHistograms;
+	std::vector<double> m_trainClasses;
 	std::vector<std::string> m_classNames;
-	unsigned int m_numTrainImages;
 
 	std::vector<svm_problem*> m_svmProbs;
 	std::vector<svm_model*> m_svmModels;

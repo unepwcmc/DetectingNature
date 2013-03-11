@@ -6,7 +6,7 @@
 
 class Image {
 public:
-	enum Colourspace {GREYSCALE, OPPONENT};
+	enum Colourspace {GREYSCALE, OPPONENT, HSV};
 
 	Image(std::string filename, Colourspace colour);
 	~Image();

@@ -6,16 +6,31 @@ using namespace boost::filesystem;
 DatasetManager::DatasetManager() {
 }
 
-DatasetManager::DatasetManager(const string datasetPath) {
+DatasetManager::DatasetManager(const string datasetPath,
+		unsigned int trainImagesPerClass) {
+		
 	m_datasetPath = datasetPath;
 	
 	preloadFileLists();
 	
 	random_shuffle(m_classFiles.begin(), m_classFiles.end());
 	sort(m_classNames.begin(), m_classNames.end());
-}
-
-DatasetManager::~DatasetManager() {
+	
+	vector<unsigned int> classTotal(m_classNames.size(), 0);
+	for(unsigned int i = 0; i < m_classFiles.size(); i++) {
+		unsigned int classNumber = distance(m_classNames.begin(),
+			find(m_classNames.begin(), m_classNames.end(),
+			m_classFiles[i].second));
+			
+		if(classTotal[classNumber] < trainImagesPerClass) {
+			m_trainFiles.push_back(m_classFiles[i].first);
+			m_trainClasses.push_back(classNumber);
+			classTotal[classNumber]++;
+		} else {
+			m_testFiles.push_back(m_classFiles[i].first);
+			m_testClasses.push_back(classNumber);
+		}
+	}
 }
 
 void DatasetManager::preloadFileLists() {
@@ -66,10 +81,22 @@ vector<unsigned int> DatasetManager::getImageClasses() const {
 	return results;
 }
 
-string DatasetManager::getDatasetPath() const {
-	return m_datasetPath;
+std::vector<std::string> DatasetManager::getTrainData() const {
+	return m_trainFiles;
 }
 
-string DatasetManager::getCachePath() const {
-	return "cache/" + m_datasetPath;
+std::vector<unsigned int> DatasetManager::getTrainClasses() const {
+	return m_trainClasses;
+}
+
+std::vector<std::string> DatasetManager::getTestData() const {
+	return m_testFiles;
+}
+
+std::vector<unsigned int> DatasetManager::getTestClasses() const {
+	return m_testClasses;
+}
+
+string DatasetManager::getDatasetPath() const {
+	return m_datasetPath;
 }

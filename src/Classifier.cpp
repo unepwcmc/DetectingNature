@@ -1,40 +1,10 @@
 #include "Classifier.h"
 using namespace std;
 
-Classifier::Classifier(vector<Histogram*> histograms,
-		vector<unsigned int> imageClasses, vector<string> classNames,
-		unsigned int trainImagesPerClass) {
-
+Classifier::Classifier(vector<string> classNames) {
 	svm_set_print_string_function(&printSvm);
-
-	std::vector<Histogram*> histogramsTrain;
-	std::vector<unsigned int> imageClassesTrain;
-	std::vector<Histogram*> histogramsTest;
-	std::vector<unsigned int> imageClassesTest;
-
-	vector<unsigned int> classTotal(classNames.size(), 0);
-	for(unsigned int i = 0; i < histograms.size(); i++) {
-		if(classTotal[imageClasses[i]] < trainImagesPerClass) {
-			histogramsTrain.push_back(histograms[i]);
-			imageClassesTrain.push_back(imageClasses[i]);
-			classTotal[imageClasses[i]]++;
-		} else {
-			histogramsTest.push_back(histograms[i]);
-			imageClassesTest.push_back(imageClasses[i]);
-		}
-	}
-	
-	copy(histogramsTrain.begin(), histogramsTrain.end(),
-		back_inserter(m_histograms));
-	copy(histogramsTest.begin(), histogramsTest.end(),
-		back_inserter(m_histograms));
-	copy(imageClassesTrain.begin(), imageClassesTrain.end(),
-		back_inserter(m_imageClasses));
-	copy(imageClassesTest.begin(), imageClassesTest.end(),
-		back_inserter(m_imageClasses));
 	
 	m_classNames = classNames;
-	m_numTrainImages = trainImagesPerClass * classNames.size();
 	
 	m_svmParams = nullptr;
 	m_svmProbs.resize(m_classNames.size(), nullptr);
@@ -43,7 +13,7 @@ Classifier::Classifier(vector<Histogram*> histograms,
 
 Classifier::~Classifier() {
 	if(m_svmProbs[0] != nullptr) {
-		for(unsigned int i = 0; i < m_numTrainImages; i++) {
+		for(unsigned int i = 0; i < m_trainHistograms.size(); i++) {
 			delete[] m_svmProbs[0]->x[i];
 		}
 		delete[] m_svmProbs[0]->x;
@@ -66,33 +36,34 @@ Classifier::~Classifier() {
 }
 
 float* Classifier::flattenHistogramData() {
-	int histLength = m_histograms[0]->getLength();
-	int datasetSize = m_histograms.size() * histLength;
+	int histLength = m_trainHistograms[0]->getLength();
+	int datasetSize = m_trainHistograms.size() * histLength;
 	float* data = new float[datasetSize];
 	int currentIndex = 0;
-	for(unsigned int i = 0; i < m_histograms.size(); i++) {
-		memcpy(&data[currentIndex], m_histograms[i]->getData(), histLength);
+	for(unsigned int i = 0; i < m_trainHistograms.size(); i++) {
+		memcpy(&data[currentIndex], m_trainHistograms[i]->getData(), histLength);
 		currentIndex += histLength;
 	}
 	return data;
 }
 
-double Classifier::test() {
+double Classifier::test(vector<Histogram*> testHistograms,
+		vector<unsigned int> testClasses) {
+			
 	OutputHelper::printMessage("Testing Classifier:");
 	ConfusionMatrix confMat(m_classNames);
 	
-	unsigned int totalImages = m_histograms.size() - m_numTrainImages;
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
-	for(unsigned int i = m_numTrainImages; i < m_histograms.size(); i++) {
-		svm_node testNode[m_numTrainImages];
+	for(unsigned int i = 0; i < testHistograms.size(); i++) {
+		svm_node testNode[m_trainHistograms.size() + 1];
 		testNode[0].index = 0;
 		testNode[0].value = 0;
 		#pragma omp parallel for
-		for(unsigned int j = 0; j < m_numTrainImages; j++) {				
+		for(unsigned int j = 0; j < m_trainHistograms.size(); j++) {				
 			testNode[j+1].index = j + 1;
 			testNode[j+1].value =
-				intersectionKernel(m_histograms[i], m_histograms[j]);
+				intersectionKernel(testHistograms[i], m_trainHistograms[j]);
 		}
 		
 		double predictedClass = 0;
@@ -112,13 +83,13 @@ double Classifier::test() {
 			}			
 		}
 		
-		confMat.addEntry(m_imageClasses[i], predictedClass);
+		confMat.addEntry(testClasses[i], predictedClass);
 		
 		#pragma omp critical
 		{
 			currentIter++;
-			OutputHelper::printResults("Predicting image",
-				currentIter, totalImages, predictedClass, predictedValue);
+			OutputHelper::printResults("Predicting image", currentIter,
+				testHistograms.size(), predictedClass, predictedValue);
 		}
 	}
 	confMat.printMatrix();
@@ -137,14 +108,22 @@ double Classifier::intersectionKernel(Histogram* a, Histogram* b) {
 }
 
 double* Classifier::buildClassList(unsigned int desiredClass) {
-	double* classes = new double[m_numTrainImages];
-	for(unsigned int i = 0; i < m_numTrainImages; i++) {
-		classes[i] = (unsigned int)m_imageClasses[i] == desiredClass;
+	double* classes = new double[m_trainHistograms.size()];
+	for(unsigned int i = 0; i < m_trainHistograms.size(); i++) {
+		classes[i] = (unsigned int)m_trainClasses[i] == desiredClass;
 	}
 	return classes;
 }
 
-void Classifier::classify(double C) {
+void Classifier::train(vector<Histogram*> histograms,
+		vector<unsigned int> imageClasses, double C) {
+		
+	m_trainHistograms = histograms;
+	for_each(imageClasses.begin(), imageClasses.end(), [&](double imgClass) {
+		m_trainClasses.push_back(imgClass);
+	});
+
+	
 	OutputHelper::printMessage("Training Classifier:");
 
 	m_svmParams = new svm_parameter();
@@ -157,32 +136,32 @@ void Classifier::classify(double C) {
 	m_svmParams->probability = 0;
 	m_svmParams->nr_weight = 0;
 
-	svm_node** kernel = new svm_node*[m_numTrainImages];
+	svm_node** kernel = new svm_node*[m_trainHistograms.size()];
 	
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
-	for(unsigned int i = 0; i < m_numTrainImages; i++) {
-		kernel[i] = new svm_node[m_numTrainImages + 2];
+	for(unsigned int i = 0; i < m_trainHistograms.size(); i++) {
+		kernel[i] = new svm_node[m_trainHistograms.size() + 2];
 		kernel[i][0].index = 0;
 		kernel[i][0].value = i + 1;
 		#pragma omp parallel for
-		for(unsigned int j = 0; j < m_numTrainImages; j++) {				
+		for(unsigned int j = 0; j < m_trainHistograms.size(); j++) {				
 			kernel[i][j+1].index = j + 1;
 			kernel[i][j+1].value =
-				intersectionKernel(m_histograms[i], m_histograms[j]);
+				intersectionKernel(m_trainHistograms[i], m_trainHistograms[j]);
 		}
 		
 		#pragma omp critical
 		{
 			currentIter++;
 			OutputHelper::printProgress("Calculating kernel matrix",
-				currentIter, m_numTrainImages);
+				currentIter, m_trainHistograms.size());
 		}
 	}
 	
 	for(unsigned int i = 0; i < m_classNames.size(); i++) {
 		m_svmProbs[i] = new svm_problem();
-		m_svmProbs[i]->l = m_numTrainImages;
+		m_svmProbs[i]->l = m_trainHistograms.size();
 		m_svmProbs[i]->y = buildClassList(i);
 		m_svmProbs[i]->x = kernel;
 	
