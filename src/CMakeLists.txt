@@ -13,7 +13,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(../libs/vlfeat-0.9.16)
 link_directories(../libs/vlfeat-0.9.16/bin/glnx86/)
 
-add_executable(DetectingNature OutputHelper.cpp CacheHelper.cpp Image.cpp ImageFeatures.cpp FeatureExtractor.cpp DatasetManager.cpp Histogram.cpp Codebook.cpp CodebookGenerator.cpp ConfusionMatrix.cpp Classifier.cpp ClassificationFramework.cpp main.cpp)
+add_executable(DetectingNature OutputHelper.cpp CacheHelper.cpp Image.cpp ImageFeatures.cpp FeatureExtractor.cpp Settings.cpp DatasetManager.cpp Histogram.cpp Codebook.cpp CodebookGenerator.cpp ConfusionMatrix.cpp Classifier.cpp ClassificationFramework.cpp main.cpp)
 
 target_link_libraries(DetectingNature ${OpenCV_LIBS})
 target_link_libraries(DetectingNature ${Boost_LIBRARIES})

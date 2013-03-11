@@ -1,9 +1,10 @@
 #include "ClassificationFramework.h"
 
-int main() {
-	Settings settings;
-	settings.datasetPath = "data/OT-8";
-	settings.colourspace = Image::HSV;
+int main(int argc, char** argv) {
+	Settings settings("settings.xml");
+	if(argc == 2) {
+		settings = Settings(std::string(argv[1]));
+	}
 	
 	ClassificationFramework cf(settings);
 	cf.run();

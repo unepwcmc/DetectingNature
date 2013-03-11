@@ -1,0 +1,21 @@
+<settings>
+	<dataset>data/LSP-15</dataset>
+	<features>
+		<colourspace>0</colourspace>
+		<type>0</type>
+		<gridspacing>8</gridspacing>
+		<patchsize>16</patchsize>
+	</features>
+	<codebook>
+		<textonimages>50</textonimages>
+		<codewords>200</codewords>
+	</codebook>
+	<histograms>
+		<pyramidlevels>2</pyramidlevels>
+	</histograms>
+	<classifier>
+		<c>10</c>
+		<imagesperclass>100</imagesperclass>
+	</classifier>
+</settings>
+

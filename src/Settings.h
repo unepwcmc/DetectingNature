@@ -1,30 +1,36 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+
 #include "Image.h"
 #include "FeatureExtractor.h"
 
 struct Settings {
+	Settings();
+	Settings(std::string filename);
+
 	std::string datasetPath;
 	
 	// Image settings
-	Image::Colourspace colourspace = Image::GREYSCALE;
+	Image::Colourspace colourspace;
 	
 	// Feature settings
-	FeatureExtractor::Type featureType = FeatureExtractor::DSIFT;
-	unsigned int gridSpacing = 8;
-	unsigned int patchSize = 16;
+	FeatureExtractor::Type featureType;
+	unsigned int gridSpacing;
+	unsigned int patchSize;
 	
 	// Codebook settings
-	unsigned int textonImages = 50;
-	unsigned int codewords = 200;
+	unsigned int textonImages;
+	unsigned int codewords;
 	
 	// Histogram settings
-	unsigned int pyramidLevels = 2;
+	unsigned int pyramidLevels;
 	
 	// Classifier settings
-	double C = 10.0;
-	unsigned int trainImagesPerClass = 100;
+	double C;
+	unsigned int trainImagesPerClass;
 };
 
 #endif
