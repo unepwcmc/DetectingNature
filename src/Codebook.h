@@ -14,15 +14,18 @@ extern "C" {
 
 class Codebook {
 public:
+	enum Type {SQUARES, SLICES};
+
 	Codebook();
-	Codebook(const float* clusterCenters,
-		unsigned int numClusters, unsigned int dataSize);
+	Codebook(const float* clusterCenters, unsigned int numClusters,
+		unsigned int dataSize, Type type);
 	~Codebook();
 	
 	Histogram* computeHistogram(ImageFeatures* imageFeatures,
 		unsigned int levels);
 	
 private:
+	Type m_type;
 	VlKMeans* m_kmeans;
 	std::vector<float> m_centers;
 	unsigned int m_numClusters;
@@ -35,6 +38,7 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
+		ar & m_type;
 		ar & m_numClusters;
 		ar & m_centers;
 	}

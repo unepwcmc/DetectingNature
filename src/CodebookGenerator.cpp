@@ -13,9 +13,7 @@ vector<float> CodebookGenerator::generateDescriptorSet(
 	
 	for(unsigned int i = 0; i < numTextonImages; i++) {			
 		for(unsigned int j = 0; j < m_imageFeatures[i]->getNumFeatures(); j++) {
-			const float* feature =
-				m_imageFeatures[i]->getFeature(j);
-			
+			const float* feature = m_imageFeatures[i]->getFeature(j);
 			copy(feature, feature + descriptorSize, back_inserter(descriptors));
 		}
 	}
@@ -23,8 +21,8 @@ vector<float> CodebookGenerator::generateDescriptorSet(
 	return descriptors;
 }
 
-Codebook* CodebookGenerator::generate(
-		unsigned int numTextonImages, unsigned int numClusters) {
+Codebook* CodebookGenerator::generate(unsigned int numTextonImages,
+		unsigned int numClusters, Codebook::Type type) {
 		
 	int descriptorSize = m_imageFeatures[0]->getDescriptorSize();
 	vector<float> descriptors = generateDescriptorSet(numTextonImages);
@@ -41,5 +39,5 @@ Codebook* CodebookGenerator::generate(
 		descriptorSize, descriptors.size() / descriptorSize, numClusters);
 	
 	return new Codebook((const float*)vl_kmeans_get_centers(kmeans),
-		numClusters, descriptorSize);
+		numClusters, descriptorSize, type);
 }

@@ -29,6 +29,7 @@ string CacheHelper::getCacheFolder(string filename,
 	cacheNameStream	<<
 		"_" << m_settings.textonImages <<
 		"_" << m_settings.codewords <<
+		"_" << m_settings.histogramType <<
 		"_" << m_settings.pyramidLevels;
 		
 	

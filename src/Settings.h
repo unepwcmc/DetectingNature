@@ -5,6 +5,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 
 #include "Image.h"
+#include "Codebook.h"
 #include "FeatureExtractor.h"
 
 struct Settings {
@@ -26,6 +27,7 @@ struct Settings {
 	unsigned int codewords;
 	
 	// Histogram settings
+	Codebook::Type histogramType;
 	unsigned int pyramidLevels;
 	
 	// Classifier settings

@@ -16,7 +16,8 @@ extern "C" {
 class CodebookGenerator {
 public:
 	CodebookGenerator(std::vector<ImageFeatures*> imageFeatures);
-	Codebook* generate(unsigned int numTextonImages, unsigned int numClusters);
+	Codebook* generate(unsigned int numTextonImages,
+		unsigned int numClusters, Codebook::Type type);
 	
 private:
 	std::vector<ImageFeatures*> m_imageFeatures;

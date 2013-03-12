@@ -60,8 +60,8 @@ vector<Histogram*> ClassificationFramework::generateHistograms(
 	Codebook* codebook = m_cacheHelper->load<Codebook>("codebook");
 	if(codebook == nullptr) {
 		CodebookGenerator codebookGenerator(features);
-		codebook = codebookGenerator.generate(
-			m_settings.textonImages, m_settings.codewords);
+		codebook = codebookGenerator.generate(m_settings.textonImages,
+			m_settings.codewords, m_settings.histogramType);
 		m_cacheHelper->save<Codebook>("codebook", codebook);
 	}
 

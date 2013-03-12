@@ -11,6 +11,7 @@
 		<codewords>200</codewords>
 	</codebook>
 	<histograms>
+		<type>0</type>
 		<pyramidlevels>2</pyramidlevels>
 	</histograms>
 	<classifier>
