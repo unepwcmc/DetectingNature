@@ -1,14 +1,15 @@
 #include "CacheHelper.h"
 using namespace std;
 
-CacheHelper::CacheHelper(Settings& settings) {
+CacheHelper::CacheHelper(string datasetPath, Settings& settings) {
+	m_datasetPath = datasetPath;
 	m_settings = settings;
 }
 
 string CacheHelper::getCacheFolder(string filename,
 		const type_info& dataType) {
 	
-	string basePath = "cache/" + m_settings.datasetPath +
+	string basePath = "cache/" + m_datasetPath +
 			"/" + dataType.name();
 	
 	if(dataType == typeid(DatasetManager)) {

@@ -11,8 +11,6 @@
 struct Settings {
 	Settings();
 	Settings(std::string filename);
-
-	std::string datasetPath;
 	
 	// Image settings
 	Image::Colourspace colourspace;

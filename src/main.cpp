@@ -1,13 +1,53 @@
+#include <boost/program_options.hpp>
+
 #include "ClassificationFramework.h"
 
+using namespace std;
+namespace po = boost::program_options;
+
 int main(int argc, char** argv) {
-	Settings settings("settings.xml");
-	if(argc == 2) {
-		settings = Settings(std::string(argv[1]));
+	unsigned int numRuns;
+
+	po::options_description desc("Allowed options");
+	desc.add_options()
+		("help", "print this message")
+		("dataset", po::value<string>(),
+			"folder containing the dataset to use for training")
+		("settings", po::value<string>()->default_value("settings.xml"),
+			"file containing all the classification parameters")
+		("num-runs", po::value<unsigned int>(&numRuns)->default_value(1),
+			"number of times to run the classifier");
+	;
+	
+	po::variables_map vm;
+	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
+	
+	if(vm.count("help")) {
+		cout << desc << endl;
+		return 1;
+	}
+
+	string datasetPath;
+	if(vm.count("dataset")) {
+		datasetPath = vm["dataset"].as<string>();
+	} else {
+		cout << desc << endl;
+		return 1;
+	}	
+	
+	Settings settings(vm["settings"].as<string>());
+	double classificationTotal = 0;
+	for(unsigned int i = 0; i < numRuns; i++) {
+		ClassificationFramework cf(datasetPath, settings, numRuns != 1);
+		classificationTotal += cf.run();
 	}
 	
-	ClassificationFramework cf(settings);
-	cf.run();
+	if(numRuns > 1) {
+		cout << "Average over " << numRuns << " runs: "
+			<< setw(4) << (classificationTotal / numRuns) * 100.0
+			<< "%" << endl;
+	}
 	
 	return 0;
 }

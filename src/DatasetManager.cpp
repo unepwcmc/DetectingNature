@@ -13,7 +13,9 @@ DatasetManager::DatasetManager(const string datasetPath,
 	
 	preloadFileLists();
 	
-	random_shuffle(m_classFiles.begin(), m_classFiles.end());
+	unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+	shuffle(m_classFiles.begin(), m_classFiles.end(),
+		default_random_engine(seed));
 	sort(m_classNames.begin(), m_classNames.end());
 	
 	vector<unsigned int> classTotal(m_classNames.size(), 0);

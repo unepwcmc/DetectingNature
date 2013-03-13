@@ -12,12 +12,14 @@
 
 class ClassificationFramework {
 public:
-	ClassificationFramework(Settings &settings);
+	ClassificationFramework(std::string datasetPath,
+		Settings &settings, bool skipCache);
 	~ClassificationFramework();
 	
 	double run();	
 
 private:
+	bool m_skipCache;
 	Settings m_settings;
 	CacheHelper* m_cacheHelper;
 	DatasetManager* m_datasetManager;
@@ -27,7 +29,7 @@ private:
 	std::vector<ImageFeatures*> generateFeatures(
 		std::vector<std::string> imagePaths);
 	std::vector<Histogram*> generateHistograms(
-		std::vector<std::string> imagePaths);
+		std::vector<std::string> imagePaths, bool skipCodebook);
 	double trainClassifier();
 };
 

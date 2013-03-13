@@ -1,14 +1,18 @@
 #include "ClassificationFramework.h"
 using namespace std;
 
-ClassificationFramework::ClassificationFramework(Settings &settings) {
+ClassificationFramework::ClassificationFramework(string datasetPath,
+		Settings &settings, bool skipCache) {
+		
+	m_skipCache = skipCache;
 	m_settings = settings;
 	
-	m_cacheHelper = new CacheHelper(m_settings);
+	m_cacheHelper = new CacheHelper(datasetPath, m_settings);
 	
-	m_datasetManager = m_cacheHelper->load<DatasetManager>("dataset");
+	m_datasetManager = m_skipCache ?
+		nullptr : m_cacheHelper->load<DatasetManager>("dataset");
 	if(m_datasetManager == nullptr) {
-		m_datasetManager = new DatasetManager(settings.datasetPath,
+		m_datasetManager = new DatasetManager(datasetPath,
 			settings.trainImagesPerClass);
 		m_cacheHelper->save<DatasetManager>("dataset", m_datasetManager);
 	}
@@ -50,14 +54,15 @@ vector<ImageFeatures*> ClassificationFramework::generateFeatures(
 }
 
 vector<Histogram*> ClassificationFramework::generateHistograms(
-		vector<string> imagePaths) {
+		vector<string> imagePaths, bool skipCodebook) {
 		
 	vector<Histogram*> histograms(imagePaths.size(), nullptr);
 	vector<ImageFeatures*> features = generateFeatures(imagePaths);
 	
 	OutputHelper::printMessage("Generating histograms:");
 			
-	Codebook* codebook = m_cacheHelper->load<Codebook>("codebook");
+	Codebook* codebook = skipCodebook ?
+		nullptr : m_cacheHelper->load<Codebook>("codebook");
 	if(codebook == nullptr) {
 		CodebookGenerator codebookGenerator(features);
 		codebook = codebookGenerator.generate(m_settings.textonImages,
@@ -68,7 +73,8 @@ vector<Histogram*> ClassificationFramework::generateHistograms(
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
 	for(unsigned int i = 0; i < imagePaths.size(); i++) {	
-		histograms[i] = m_cacheHelper->load<Histogram>(imagePaths[i]);
+		histograms[i] = m_skipCache ?
+			nullptr : m_cacheHelper->load<Histogram>(imagePaths[i]);
 		if(histograms[i] == nullptr) {
 			histograms[i] = codebook->computeHistogram(features[i],
 				m_settings.pyramidLevels);
@@ -93,7 +99,7 @@ vector<Histogram*> ClassificationFramework::generateHistograms(
 
 double ClassificationFramework::trainClassifier() {
 	vector<Histogram*> trainHistograms =
-		generateHistograms(m_datasetManager->getTrainData());
+		generateHistograms(m_datasetManager->getTrainData(), m_skipCache);
 
 	vector<string> classNames = m_datasetManager->listClasses();
 	Classifier classifier(classNames);
@@ -101,7 +107,7 @@ double ClassificationFramework::trainClassifier() {
 		m_datasetManager->getTrainClasses(), m_settings.C);
 	
 	vector<Histogram*> testHistograms =
-		generateHistograms(m_datasetManager->getTestData());
+		generateHistograms(m_datasetManager->getTestData(), false);
 	double result =
 		classifier.test(testHistograms, m_datasetManager->getTestClasses());
 	

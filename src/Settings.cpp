@@ -18,9 +18,7 @@ Settings::Settings() {
 Settings::Settings(std::string filename) {
 	ptree tree;
 	read_xml(filename, tree);
-	
-	datasetPath = tree.get<string>("settings.dataset");
-	
+		
 	colourspace =
 		(Image::Colourspace)tree.get("settings.features.colourspace", 0);
 	featureType =

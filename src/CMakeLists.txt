@@ -4,7 +4,7 @@ cmake_policy(SET CMP0015 NEW)
 
 find_package(OpenMP REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(Boost COMPONENTS system filesystem serialization REQUIRED)
+find_package(Boost COMPONENTS system filesystem serialization program_options REQUIRED)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/..)
 set(CMAKE_CXX_FLAGS "-g -O2 -Wall -Wextra -Wno-unused-parameter -std=c++11 ${OpenMP_CXX_FLAGS}")

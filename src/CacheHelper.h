@@ -14,7 +14,7 @@
 
 class CacheHelper {
 public:
-	CacheHelper(Settings& settings);
+	CacheHelper(std::string datasetPath, Settings& settings);
 	
 	template <typename T> T* load(std::string filename) {
 		std::string cacheFilename = getCacheFolder(filename, typeid(T)) +
@@ -44,6 +44,7 @@ public:
 	}
 
 private:
+	std::string m_datasetPath;
 	Settings m_settings;
 	
 	std::string getCacheFolder(std::string filename, 

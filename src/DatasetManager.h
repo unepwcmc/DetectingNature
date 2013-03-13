@@ -6,6 +6,8 @@
 #include <utility>
 #include <algorithm>
 #include <map>
+#include <random>
+#include <chrono>
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
