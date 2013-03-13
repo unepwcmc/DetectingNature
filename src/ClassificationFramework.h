@@ -23,10 +23,17 @@ private:
 	Settings m_settings;
 	CacheHelper* m_cacheHelper;
 	DatasetManager* m_datasetManager;
+	FeatureExtractor* m_featureExtractor;
 	std::vector<std::string> m_imagePaths;
 	std::string m_cachePath;
 	
-	std::vector<ImageFeatures*> generateFeatures(
+	Codebook* prepareCodebook(
+		std::vector<std::string> imagePaths, bool skipCache);
+	ImageFeatures* extractFeature(std::string imagePath);
+	Histogram* generateHistogram(Codebook* codebook, std::string filePath);
+	Classifier* trainClassifier(std::vector<Histogram*> trainHistograms); 
+	
+	std::vector<ImageFeatures*> extractFeatures(
 		std::vector<std::string> imagePaths);
 	std::vector<Histogram*> generateHistograms(
 		std::vector<std::string> imagePaths, bool skipCodebook);
