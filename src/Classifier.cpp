@@ -47,55 +47,6 @@ float* Classifier::flattenHistogramData() {
 	return data;
 }
 
-double Classifier::test(vector<Histogram*> testHistograms,
-		vector<unsigned int> testClasses) {
-			
-	OutputHelper::printMessage("Testing Classifier:");
-	ConfusionMatrix confMat(m_classNames);
-	
-	unsigned int currentIter = 0;
-	#pragma omp parallel for
-	for(unsigned int i = 0; i < testHistograms.size(); i++) {
-		svm_node testNode[m_trainHistograms.size() + 1];
-		testNode[0].index = 0;
-		testNode[0].value = 0;
-		#pragma omp parallel for
-		for(unsigned int j = 0; j < m_trainHistograms.size(); j++) {				
-			testNode[j+1].index = j + 1;
-			testNode[j+1].value =
-				intersectionKernel(testHistograms[i], m_trainHistograms[j]);
-		}
-		
-		double predictedClass = 0;
-		double predictedValue = 1e6;
-		
-		for(unsigned int j = 0; j < m_classNames.size(); j++) {
-			double thisValue;
-			double thisClass =
-				svm_predict_values(m_svmModels[j], testNode, &thisValue);
-			thisValue = ((thisClass == 0 && thisValue < 0) ||
-				(thisClass == 1 && thisValue > 0)) ?
-				-thisValue : thisValue;
-						
-			if(thisValue < predictedValue) {
-				predictedValue = thisValue;
-				predictedClass = j;
-			}			
-		}
-		
-		confMat.addEntry(testClasses[i], predictedClass);
-		
-		#pragma omp critical
-		{
-			currentIter++;
-			OutputHelper::printResults("Predicting image", currentIter,
-				testHistograms.size(), predictedClass, predictedValue);
-		}
-	}
-	confMat.printMatrix();
-	return confMat.getDiagonalAverage();
-}
-
 double Classifier::intersectionKernel(Histogram* a, Histogram* b) {
 	double kernelVal = 0;
 	const double* dataA = a->getData();
@@ -122,7 +73,6 @@ void Classifier::train(vector<Histogram*> histograms,
 	for_each(imageClasses.begin(), imageClasses.end(), [&](double imgClass) {
 		m_trainClasses.push_back(imgClass);
 	});
-
 	
 	OutputHelper::printMessage("Training Classifier:");
 
@@ -169,4 +119,59 @@ void Classifier::train(vector<Histogram*> histograms,
 		//svm_save_model("model.out", m_svmModel);
 		cout << endl;
 	}
+}
+
+double Classifier::test(vector<Histogram*> testHistograms,
+		vector<unsigned int> testClasses) {
+			
+	OutputHelper::printMessage("Testing Classifier:");
+	ConfusionMatrix confMat(m_classNames);
+	
+	unsigned int currentIter = 0;
+	#pragma omp parallel for
+	for(unsigned int i = 0; i < testHistograms.size(); i++) {
+		pair<unsigned int, double> result = classify(testHistograms[i]);
+		
+		confMat.addEntry(testClasses[i], result.first);
+		
+		#pragma omp critical
+		{
+			currentIter++;
+			OutputHelper::printResults("Predicting image", currentIter,
+				testHistograms.size(), result.first, result.second);
+		}
+	}
+	confMat.printMatrix();
+	return confMat.getDiagonalAverage();
+}
+
+pair<unsigned int, double> Classifier::classify(Histogram* histogram) {
+	svm_node testNode[m_trainHistograms.size() + 1];
+	testNode[0].index = 0;
+	testNode[0].value = 0;
+	#pragma omp parallel for
+	for(unsigned int j = 0; j < m_trainHistograms.size(); j++) {				
+		testNode[j+1].index = j + 1;
+		testNode[j+1].value =
+			intersectionKernel(histogram, m_trainHistograms[j]);
+	}
+	
+	unsigned int predictedClass = 0;
+	double predictedValue = 1e6;
+	
+	for(unsigned int j = 0; j < m_classNames.size(); j++) {
+		double thisValue;
+		double thisClass =
+			svm_predict_values(m_svmModels[j], testNode, &thisValue);
+		thisValue = ((thisClass == 0 && thisValue < 0) ||
+			(thisClass == 1 && thisValue > 0)) ?
+			-thisValue : thisValue;
+					
+		if(thisValue < predictedValue) {
+			predictedValue = thisValue;
+			predictedClass = j;
+		}			
+	}
+	
+	return make_pair(predictedClass, predictedValue);
 }

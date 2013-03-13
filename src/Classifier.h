@@ -20,6 +20,7 @@ public:
 		std::vector<unsigned int> imageClasses, double C);
 	double test(std::vector<Histogram*> histograms,
 		std::vector<unsigned int> imageClasses);
+	std::pair<unsigned int, double> classify(Histogram* histogram);
 
 private:
 	std::vector<Histogram*> m_trainHistograms;

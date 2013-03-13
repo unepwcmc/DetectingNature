@@ -16,7 +16,8 @@ public:
 		Settings &settings, bool skipCache);
 	~ClassificationFramework();
 	
-	double run();	
+	double testRun();
+	std::map<std::string, std::string> classify(std::string imagesFolder);
 
 private:
 	bool m_skipCache;

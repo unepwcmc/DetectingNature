@@ -1,5 +1,6 @@
 #include "ClassificationFramework.h"
 using namespace std;
+using namespace boost::filesystem;
 
 ClassificationFramework::ClassificationFramework(string datasetPath,
 		Settings &settings, bool skipCache) {
@@ -116,7 +117,7 @@ Classifier* ClassificationFramework::trainClassifier(
 	return classifier;
 }
 
-double ClassificationFramework::run() {
+double ClassificationFramework::testRun() {
 	vector<Histogram*> trainHistograms =
 		generateHistograms(m_datasetManager->getTrainData(), m_skipCache);
 
@@ -133,4 +134,34 @@ double ClassificationFramework::run() {
 		delete testHistograms[i];
 
 	return result;
+}
+
+map<string, string> ClassificationFramework::classify(string imagesFolder) {
+	vector<Histogram*> trainHistograms =
+		generateHistograms(m_datasetManager->getTrainData(), m_skipCache);
+
+	Classifier* classifier = trainClassifier(trainHistograms);
+	
+	vector<string> filePaths;
+	for(directory_iterator it(imagesFolder); it != directory_iterator(); it++) {
+		filePaths.push_back(it->path().relative_path().string());
+	}
+	
+	vector<Histogram*> testHistograms = generateHistograms(filePaths, false);
+	
+	vector<string> classNames = m_datasetManager->listClasses();
+	map<string, string> results;
+	#pragma omp parallel for
+	for(unsigned int i = 0; i < testHistograms.size(); i++) {
+		pair<unsigned int, double> resultClass
+			= classifier->classify(testHistograms[i]);
+		results[filePaths[i]] = classNames[resultClass.first];
+	}
+	
+	for(unsigned int i = 0; i < trainHistograms.size(); i++)
+		delete trainHistograms[i];
+	for(unsigned int i = 0; i < testHistograms.size(); i++)
+		delete testHistograms[i];
+
+	return results;
 }
