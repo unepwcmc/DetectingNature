@@ -5,6 +5,7 @@ using boost::property_tree::ptree;
 Settings::Settings() {
 	colourspace = Image::GREYSCALE;
 	featureType = FeatureExtractor::DSIFT;
+	smoothingSigma = 0;
 	gridSpacing = 8;
 	patchSize = 16;
 	textonImages = 50;
@@ -18,12 +19,13 @@ Settings::Settings() {
 Settings::Settings(std::string filename) {
 	ptree tree;
 	read_xml(filename, tree);
-		
+	
 	colourspace =
 		(Image::Colourspace)tree.get("settings.features.colourspace", 0);
 	featureType =
 		(FeatureExtractor::Type)tree.get("settings.features.type", 0);
 	
+	smoothingSigma = tree.get("settings.features.smoothingsigma", 0);
 	gridSpacing = tree.get("settings.features.gridspacing", 8);
 	patchSize = tree.get("settings.features.patchsize", 16);
 	

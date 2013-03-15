@@ -17,6 +17,7 @@ struct Settings {
 	
 	// Feature settings
 	FeatureExtractor::Type featureType;
+	double smoothingSigma;
 	unsigned int gridSpacing;
 	unsigned int patchSize;
 	

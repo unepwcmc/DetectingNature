@@ -14,12 +14,13 @@ class FeatureExtractor {
 public:
 	enum Type {DSIFT, HOG};
 
-	FeatureExtractor(Type type, unsigned int gridSpacing,
-		unsigned int patchSize);
+	FeatureExtractor(Type type, float smoothingSigma,
+		unsigned int gridSpacing, unsigned int patchSize);
 	ImageFeatures* extract(Image& img);
 	
 private:
 	Type m_type;
+	float m_smoothingSigma;
 	unsigned int m_gridSpacing;
 	unsigned int m_patchSize;
 

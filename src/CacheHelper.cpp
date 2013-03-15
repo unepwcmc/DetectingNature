@@ -20,6 +20,7 @@ string CacheHelper::getCacheFolder(string filename,
 	cacheNameStream	<< 
 		"_" << m_settings.colourspace <<
 		"_" << m_settings.featureType <<
+		"_" << m_settings.smoothingSigma << 
 		"_" << m_settings.gridSpacing <<
 		"_" << m_settings.patchSize;
 		

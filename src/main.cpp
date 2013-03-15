@@ -50,16 +50,21 @@ int main(int argc, char** argv) {
 		}
 		
 	} else {
-		double classificationTotal = 0;
+		double results[numRuns];
 		for(unsigned int i = 0; i < numRuns; i++) {
 			ClassificationFramework cf(datasetPath, settings, numRuns != 1);
-			classificationTotal += cf.testRun();
+			results[i] = cf.testRun();
 		}
-		
+		double sum = accumulate(results, results + numRuns, 0.0);
+		double mean = sum / numRuns;
+
+		double sqSum = inner_product(
+			results, results + numRuns, results, 0.0);
+		double stdev = sqrt(sqSum / numRuns - mean * mean);
+  
 		if(numRuns > 1) {
 			cout << "Average over " << numRuns << " runs: "
-				<< setw(4) << (classificationTotal / numRuns) * 100.0
-				<< "%" << endl;
+				<< mean * 100.0 << " +/- " << stdev * 100.0 << endl;
 		}
 	}
 		

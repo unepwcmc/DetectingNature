@@ -2,12 +2,13 @@
 	<features>
 		<colourspace>0</colourspace>
 		<type>0</type>
+		<smoothingsigma>0</smoothingsigma>
 		<gridspacing>8</gridspacing>
-		<patchsize>16</patchsize>
+		<patchsize>20</patchsize>
 	</features>
 	<codebook>
-		<textonimages>50</textonimages>
-		<codewords>200</codewords>
+		<textonimages>200</textonimages>
+		<codewords>400</codewords>
 	</codebook>
 	<histograms>
 		<type>0</type>

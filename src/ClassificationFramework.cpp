@@ -19,7 +19,8 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 	}
 	
 	m_featureExtractor = new FeatureExtractor(m_settings.featureType,
-		m_settings.gridSpacing, m_settings.patchSize);
+		m_settings.smoothingSigma, m_settings.gridSpacing,
+		m_settings.patchSize);
 }
 
 ClassificationFramework::~ClassificationFramework() {

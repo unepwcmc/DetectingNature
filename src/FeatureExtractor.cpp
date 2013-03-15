@@ -1,9 +1,10 @@
 #include "FeatureExtractor.h"
 using namespace std;
 
-FeatureExtractor::FeatureExtractor(Type type,
+FeatureExtractor::FeatureExtractor(Type type, float smoothingSigma,
 		unsigned int gridSpacing, unsigned int patchSize) {
 	
+	m_smoothingSigma = smoothingSigma;
 	m_type = type;
 	m_gridSpacing = gridSpacing;
 	m_patchSize = patchSize;
@@ -24,13 +25,21 @@ ImageFeatures* FeatureExtractor::extractDsift(Image& img) {
 	VlDsiftFilter* filter =
 		vl_dsift_new_basic(img.getWidth(), img.getHeight(),
 			m_gridSpacing, m_patchSize / 4);
+	int margin = m_patchSize / 8;
+	vl_dsift_set_bounds(filter, margin, margin,
+		img.getWidth() - margin - 1, img.getHeight() - margin - 1);
+	vl_dsift_set_window_size(filter, 4);
 	
 	ImageFeatures* imageFeatures =
 		new ImageFeatures(
 			img.getWidth(), img.getHeight(), img.getNumChannels());
 	
 	for(unsigned int i = 0; i < img.getNumChannels(); i++) {
-		vl_dsift_process(filter, img.getData(i));
+		float smoothedData[img.getHeight() * img.getWidth()];
+		vl_imsmooth_f(smoothedData, img.getWidth(), img.getData(i),
+			img.getWidth(), img.getHeight(), img.getWidth(),
+			m_smoothingSigma, m_smoothingSigma);
+		vl_dsift_process(filter, smoothedData);
 		
 		unsigned int descriptorSize = vl_dsift_get_descriptor_size(filter);
 		unsigned int numDescriptors = vl_dsift_get_keypoint_num(filter);
