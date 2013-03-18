@@ -108,7 +108,7 @@ vector<Histogram*> ClassificationFramework::generateHistograms(
 }
 
 Classifier* ClassificationFramework::trainClassifier(
-		vector<Histogram*> trainHistograms) {
+		std::vector<Histogram*> trainHistograms) {
 		
 	vector<string> classNames = m_datasetManager->listClasses();
 	Classifier* classifier = new Classifier(classNames);

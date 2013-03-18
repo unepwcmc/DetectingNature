@@ -72,18 +72,6 @@ void OutputHelper::printResults(string message, unsigned int current,
 		cout.flush();
 }
 
-void OutputHelper::printResults(unsigned int correctTrain, unsigned int sizeTrain,
-		 unsigned int correctTest, unsigned int sizeTest) {
-		 
-	int percentRecall = correctTrain * 100.0 / sizeTrain;	
-	
-	int percentRecognition = correctTest * 100.0 / sizeTest;
-		
-	cout << clearLine() << indent(2) << "Recall: "
-		<< percentRecall << "%" << endl;
-	cout << indent(2) << "Recognition: " << percentRecognition << "%" << endl;
-}
-
 void OutputHelper::printConfusionMatrix(const vector<string>& classes,
 		const multi_array<float, 2>& confusionMatrix) {
 	

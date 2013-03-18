@@ -4,7 +4,7 @@
 		<type>0</type>
 		<smoothingsigma>0</smoothingsigma>
 		<gridspacing>8</gridspacing>
-		<patchsize>20</patchsize>
+		<patchsize>16</patchsize>
 	</features>
 	<codebook>
 		<textonimages>200</textonimages>

@@ -37,31 +37,3 @@ void ImageFeatures::addFeatures(unsigned int channel, float const* features,
 		m_features[(i * m_numChannels) + channel] = features[i];
 	}
 }
-
-unsigned int ImageFeatures::getNumFeatures() const {
-	return m_numFeatures;
-}
-
-unsigned int ImageFeatures::getDescriptorSize() const {
-	return m_descriptorSize;
-}
-
-const float* ImageFeatures::getFeature(unsigned int index) const {
-	return &m_features[index * m_descriptorSize];
-}
-
-const float* ImageFeatures::getFeatures() const {
-	return &m_features[0];
-}
-
-pair<int, int> ImageFeatures::getCoordinates(unsigned int index) const {
-	return m_coordinates[index];
-}
-
-unsigned int ImageFeatures::getWidth() const {
-	return m_width;
-}
-
-unsigned int ImageFeatures::getHeight() const {
-	return m_height;
-}

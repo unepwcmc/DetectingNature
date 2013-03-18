@@ -10,13 +10,52 @@
 #include "Classifier.h"
 #include "Settings.h"
 
+/**
+ * @brief Main class for the classification of images.
+ *
+ * This class brings together all the scene classification bits ans pieces and
+ * trains an image classifier capable of distinguishing between the different
+ * categories in the given dataset.
+ */
 class ClassificationFramework {
 public:
+	/**
+	 * @brief Initializes all the classification parameters
+	 * 
+	 * @param datasetPath Relative path to the dataset to be used to
+	 * train the classifier.
+	 * @param settings Contains the parameters used by the multiple algorithms
+	 * involved in the classification process.
+	 * @param skipCache If enabled the framework will ignore the cache when
+	 * generating the codebook and the histograms. This does NOT regenerate
+	 * the image descriptors since these are not random and should not change
+	 * between multiple runs.
+	 */
 	ClassificationFramework(std::string datasetPath,
 		Settings &settings, bool skipCache);
 	~ClassificationFramework();
 	
+	/**
+	 * @brief Trains and tests a classifier.
+	 * 
+	 * Splits the dataset into a training and a testing set, trains the
+	 * classifier and returns the average accuracy of the classifier.
+	 *
+	 * @return The average of the diagonal of the confusion matrix. Returned as
+	 * a percentage, between 0 and 1.
+	 */
 	double testRun();
+	
+	/**
+	 * @brief Trains a classifier and predicts the class of other images.
+	 * 
+	 * Uses a subset of the dataset to train the classifier and the uses it to
+	 * predict the classes for all images in @a imagesFolder.
+	 *
+	 * @param imagesFolder The folder containing unclassified images for wich
+	 * we want to determine their class.
+	 * @return A map relating the file path and the name of its predicted class.
+	 */
 	std::map<std::string, std::string> classify(std::string imagesFolder);
 
 private:

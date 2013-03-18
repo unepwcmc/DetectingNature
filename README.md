@@ -10,6 +10,14 @@ Building
 
 3. Run with `./DetectingNature`
 
+Building documentation
+---------------
+
+1. Run `doxygen doxyfile`
+
+2. Output is saved to the `./docs` folder
+
+3. If the desired output is a PDF, run `make` inside `./docs/latex`
 
 Dataset structure
 ---------------

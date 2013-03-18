@@ -6,7 +6,7 @@ CodebookGenerator::CodebookGenerator(vector<ImageFeatures*> imageFeatures) {
 }
 
 vector<float> CodebookGenerator::generateDescriptorSet(
-		unsigned int numTextonImages) {
+		unsigned int numTextonImages) const {
 		
 	int descriptorSize = m_imageFeatures[0]->getDescriptorSize();
 	vector<float> descriptors;
@@ -22,7 +22,7 @@ vector<float> CodebookGenerator::generateDescriptorSet(
 }
 
 Codebook* CodebookGenerator::generate(unsigned int numTextonImages,
-		unsigned int numClusters, Codebook::Type type) {
+		unsigned int numClusters, Codebook::Type type) const {
 		
 	int descriptorSize = m_imageFeatures[0]->getDescriptorSize();
 	vector<float> descriptors = generateDescriptorSet(numTextonImages);

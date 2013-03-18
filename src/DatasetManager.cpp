@@ -1,12 +1,11 @@
 #include "DatasetManager.h"
 using namespace std;
-using namespace boost;
 using namespace boost::filesystem;
 
 DatasetManager::DatasetManager() {
 }
 
-DatasetManager::DatasetManager(const string datasetPath,
+DatasetManager::DatasetManager(std::string datasetPath,
 		unsigned int trainImagesPerClass) {
 		
 	m_datasetPath = datasetPath;
@@ -52,14 +51,6 @@ void DatasetManager::preloadClassFileList(string className, path classDir) {
 	}
 }
 
-string DatasetManager::getFilename(string filePath) {
-	return path(filePath).filename().string();
-}
-
-vector<string> DatasetManager::listClasses() const {
-	return m_classNames;
-}
-
 vector<string> DatasetManager::listFiles() const {
 	vector<string> results;
 
@@ -81,24 +72,4 @@ vector<unsigned int> DatasetManager::getImageClasses() const {
 	}
 	
 	return results;
-}
-
-std::vector<std::string> DatasetManager::getTrainData() const {
-	return m_trainFiles;
-}
-
-std::vector<unsigned int> DatasetManager::getTrainClasses() const {
-	return m_trainClasses;
-}
-
-std::vector<std::string> DatasetManager::getTestData() const {
-	return m_testFiles;
-}
-
-std::vector<unsigned int> DatasetManager::getTestClasses() const {
-	return m_testClasses;
-}
-
-string DatasetManager::getDatasetPath() const {
-	return m_datasetPath;
 }

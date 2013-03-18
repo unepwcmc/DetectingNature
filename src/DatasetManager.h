@@ -14,24 +14,86 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
 
+/**
+ * @brief Hold the information about the dataset.
+ *
+ * The class will index the files in a folder as well as associating them with
+ * their class label. These files will also be split among two sets,
+ * corresponding to the training data and the test data.
+ */
 class DatasetManager {
-
 public:
-	DatasetManager();
-	DatasetManager(const std::string datasetPath,
-		unsigned int trainImagesPerClass);
+	/**
+	 * @brief Initializes the file and label lists.
+	 *
+	 * @pre This assumes the @a datasetPath points to a folder containing one
+	 * subfolder per class, with the subfolder name being the class name. Each
+	 * of these subfolders will contain all the images of that class.
+	 * @warning There should be more than @a trainImagesPerClass images on
+	 * each subfolder.
+	 * 
+	 * @param datasetPath The folder containing the dataset.
+	 * @param trainImagesPerClass Number of images for each class that will
+	 * be placed on the training set. The remainder will be used for testing.
+	 */
+	DatasetManager(std::string datasetPath,	unsigned int trainImagesPerClass);
 	
-	static std::string getFilename(std::string filePath);
+	/**
+	 * @brief Utility function that extracts the file name from a file path.
+	 *
+	 * @param filePath The path to be converted.
+	 * @return The extracted file name.
+	 */
+	static std::string getFilename(std::string filePath) {
+		return boost::filesystem::path(filePath).filename().string();
+	}
 	
-	std::vector<std::string> listClasses() const;
-		
-	std::vector<std::string> getTrainData() const;
-	std::vector<unsigned int> getTrainClasses() const;
+	/**
+	 * @brief Lists the name of all the classes in the dataset.
+	 * 
+	 * @return The vector with the class names, sorted alphabetically.
+	 */
+	std::vector<std::string> listClasses() const {
+		return m_classNames;
+	}
 	
-	std::vector<std::string> getTestData() const;
-	std::vector<unsigned int> getTestClasses() const;
+	/**
+	 * @brief Lists the file paths of the train dataset.
+	 *
+	 * @return The shuffled list of files to be used on the classifier training.
+	 */
+	std::vector<std::string> getTrainData() const {
+		return m_trainFiles;
+	}
 	
-	std::string getDatasetPath() const;
+	/**
+	 * @brief Lists the image classes of the train dataset.
+	 *
+	 * @return The list of the image classes for the training dataset
+	 * in the same order as the getTrainData() function.
+	 */
+	std::vector<unsigned int> getTrainClasses() const {
+		return m_trainClasses;
+	}
+	
+	/**
+	 * @brief Lists the file paths of the test dataset.
+	 *
+	 * @return The shuffled list of files to be used on the classifier testing.
+	 */
+	std::vector<std::string> getTestData() const {
+		return m_testFiles;
+	}
+	
+	/**
+	 * @brief Lists the image classes of the test dataset.
+	 *
+	 * @return The list of the image classes for the testing dataset
+	 * in the same order as the getTrainData() function.
+	 */
+	std::vector<unsigned int> getTestClasses() const {
+		return m_testClasses;
+	}
 		
 private:
 	void preloadFileLists();
@@ -51,6 +113,7 @@ private:
 	
 	// Boost serialization
 	friend class boost::serialization::access;
+	DatasetManager();
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{

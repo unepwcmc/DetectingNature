@@ -6,8 +6,10 @@ CacheHelper::CacheHelper(string datasetPath, Settings& settings) {
 	m_settings = settings;
 }
 
+// Generate a cache path. This must be different for different settings in order
+// to prevent cache hits on different settings.
 string CacheHelper::getCacheFolder(string filename,
-		const type_info& dataType) {
+		const type_info& dataType) const {
 	
 	string basePath = "cache/" + m_datasetPath +
 			"/" + dataType.name();
@@ -32,8 +34,7 @@ string CacheHelper::getCacheFolder(string filename,
 		"_" << m_settings.textonImages <<
 		"_" << m_settings.codewords <<
 		"_" << m_settings.histogramType <<
-		"_" << m_settings.pyramidLevels;
-		
+		"_" << m_settings.pyramidLevels;	
 	
 	return basePath + cacheNameStream.str() + "/";
 }

@@ -10,7 +10,7 @@ FeatureExtractor::FeatureExtractor(Type type, float smoothingSigma,
 	m_patchSize = patchSize;
 }
 
-ImageFeatures* FeatureExtractor::extract(Image& img) {
+ImageFeatures* FeatureExtractor::extract(Image& img) const {
 	switch(m_type) {
 	case HOG:
 		return extractHog(img);
@@ -21,7 +21,7 @@ ImageFeatures* FeatureExtractor::extract(Image& img) {
 	}
 }
 
-ImageFeatures* FeatureExtractor::extractDsift(Image& img) {
+ImageFeatures* FeatureExtractor::extractDsift(Image& img) const {
 	VlDsiftFilter* filter =
 		vl_dsift_new_basic(img.getWidth(), img.getHeight(),
 			m_gridSpacing, m_patchSize / 4);
@@ -60,7 +60,7 @@ ImageFeatures* FeatureExtractor::extractDsift(Image& img) {
 	return imageFeatures;
 }
 
-ImageFeatures* FeatureExtractor::extractHog(Image& img) {
+ImageFeatures* FeatureExtractor::extractHog(Image& img) const {
 /*
 	VlHog* hog = vl_hog_new(VlHogVariantDalalTriggs, 8, false);
 	vl_hog_put_image(hog, img.getData(), img.getWidth(), img.getHeight(),

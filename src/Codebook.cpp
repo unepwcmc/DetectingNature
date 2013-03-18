@@ -24,7 +24,7 @@ Codebook::~Codebook() {
 }
 
 unsigned int Codebook::histogramIndex(unsigned int level,
-	unsigned int cellX, unsigned int cellY, unsigned int index) {
+	unsigned int cellX, unsigned int cellY, unsigned int index) const {
 	
 	unsigned int numDivisions = (m_type == SQUARES) ?
 		pow(2, level) : pow(2, level + 1);
