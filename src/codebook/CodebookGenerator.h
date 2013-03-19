@@ -9,9 +9,9 @@ extern "C" {
 #include <random>
 #include <algorithm>
 
-#include "OutputHelper.h"
-#include "ImageFeatures.h"
-#include "Codebook.h"
+#include "utils/OutputHelper.h"
+#include "features/ImageFeatures.h"
+#include "codebook/Codebook.h"
 
 /**
  * @brief Creates a codebook based on some representative image features.

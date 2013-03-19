@@ -8,9 +8,9 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/filesystem.hpp>
 
-#include "Settings.h"
-#include "ImageFeatures.h"
-#include "DatasetManager.h"
+#include "framework/Settings.h"
+#include "features/ImageFeatures.h"
+#include "utils/DatasetManager.h"
 
 
 /**

@@ -9,11 +9,26 @@ find_package(Boost COMPONENTS system filesystem serialization program_options RE
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/..)
 set(CMAKE_CXX_FLAGS "-g -O2 -Wall -Wextra -Wno-unused-parameter -std=c++11 ${OpenMP_CXX_FLAGS}")
 
+include_directories(.)
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories(../libs/vlfeat-0.9.16)
+include_directories(../libs/vlfeat-0.9.16/)
 link_directories(../libs/vlfeat-0.9.16/bin/glnx86/)
 
-add_executable(DetectingNature OutputHelper.cpp CacheHelper.cpp Image.cpp ImageFeatures.cpp FeatureExtractor.cpp Settings.cpp DatasetManager.cpp Histogram.cpp Codebook.cpp CodebookGenerator.cpp ConfusionMatrix.cpp Classifier.cpp ClassificationFramework.cpp main.cpp)
+add_executable(DetectingNature
+	utils/OutputHelper.cpp
+	utils/CacheHelper.cpp
+	features/Image.cpp
+	features/ImageFeatures.cpp
+	features/FeatureExtractor.cpp
+	framework/Settings.cpp
+	utils/DatasetManager.cpp
+	codebook/Histogram.cpp
+	codebook/Codebook.cpp
+	codebook/CodebookGenerator.cpp
+	classification/ConfusionMatrix.cpp
+	classification/Classifier.cpp
+	framework/ClassificationFramework.cpp
+	main.cpp)
 
 target_link_libraries(DetectingNature ${OpenCV_LIBS})
 target_link_libraries(DetectingNature ${Boost_LIBRARIES})

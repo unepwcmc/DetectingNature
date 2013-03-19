@@ -3,7 +3,7 @@
 
 #include <boost/multi_array.hpp>
 
-#include "OutputHelper.h"
+#include "utils/OutputHelper.h"
 
 /**
  * @brief Gathers and shows the results of the image classification process.

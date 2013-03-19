@@ -7,8 +7,8 @@ extern "C" {
 	#include <vl/hog.h>
 }
 
-#include "Image.h"
-#include "ImageFeatures.h"
+#include "features/Image.h"
+#include "features/ImageFeatures.h"
 
 /**
  * @brief Extracts the features of an image.

@@ -1,6 +1,6 @@
 #include <boost/program_options.hpp>
 
-#include "ClassificationFramework.h"
+#include "framework/ClassificationFramework.h"
 
 using namespace std;
 namespace po = boost::program_options;

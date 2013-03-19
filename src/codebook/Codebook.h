@@ -9,8 +9,8 @@ extern "C" {
 
 #include <boost/serialization/vector.hpp>
 
-#include "ImageFeatures.h"
-#include "Histogram.h"
+#include "features/ImageFeatures.h"
+#include "codebook/Histogram.h"
 
 /**
  * @brief Contains the codebook used to encode features.

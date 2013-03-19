@@ -8,8 +8,8 @@
 
 #include <libsvm/svm.h>
 
-#include "ConfusionMatrix.h"
-#include "Histogram.h"
+#include "classification/ConfusionMatrix.h"
+#include "codebook/Histogram.h"
 
 /**
  * @brief Contains the image classifier.

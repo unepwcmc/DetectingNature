@@ -3,12 +3,12 @@
 
 #include <fstream>
 
-#include "CacheHelper.h"
-#include "DatasetManager.h"
-#include "FeatureExtractor.h"
-#include "CodebookGenerator.h"
-#include "Classifier.h"
-#include "Settings.h"
+#include "utils/CacheHelper.h"
+#include "utils/DatasetManager.h"
+#include "features/FeatureExtractor.h"
+#include "codebook/CodebookGenerator.h"
+#include "classification/Classifier.h"
+#include "framework/Settings.h"
 
 /**
  * @brief Main class for the classification of images.

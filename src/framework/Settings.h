@@ -4,9 +4,9 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "Image.h"
-#include "Codebook.h"
-#include "FeatureExtractor.h"
+#include "features/Image.h"
+#include "codebook/Codebook.h"
+#include "features/FeatureExtractor.h"
 
 /**
  * @brief Stores all the classification parameters.
