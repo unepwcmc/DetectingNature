@@ -21,9 +21,7 @@ extern "C" {
 class FeatureExtractor {
 public:
 	/**
-	 * @brief The type of descriptor to use to represent the image features.
-	 *
-	 * @todo Complete the implementation of the @a HOG descriptor.
+	 * @brief The type of descriptor to use to represent the image features
 	 */
 	enum Type {
 		DSIFT, /**< Uses dense Scale Invariant Feature Transform descriptors */
@@ -63,6 +61,9 @@ private:
 
 	ImageFeatures* extractDsift(Image& img) const;
 	ImageFeatures* extractHog(Image& img) const;
+	float* stackFeatures(float* descriptors, unsigned int descriptorSize,
+		unsigned int numDescriptors, unsigned int width,
+		unsigned int height, unsigned int numStacks) const;
 };
 
 #endif

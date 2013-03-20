@@ -19,13 +19,11 @@ Image::Image(std::string filename, Colourspace colour) {
 				cv::Point3_<unsigned char> point;
 				point =	cvImg.at<cv::Point3_<unsigned char> >(x, y);
 
-				// This formulation may be incorrect, since the resulting values
-				// are outside the expected range of [0-255]
-				m_data[0][y * m_width + x] = (point.z - point.y) / sqrt(2);
+				m_data[0][y * m_width + x] = 0.5 * (255.0 + point.y - point.z);
 				m_data[1][y * m_width + x] =
-					(point.z + point.y - (2 * point.x)) / sqrt(6);
+					0.25 * (510.0 + point.z + point.y - (2 * point.x));
 				m_data[2][y * m_width + x] =
-					(point.z + point.y + point.x) / sqrt(3);
+					1.0 / 3.0 * (point.z + point.y + point.x);
 			} else if(colour == HSV) {
 				cv::Point3_<unsigned char> point
 					= cvImg.at<cv::Point3_<unsigned char> >(x, y);

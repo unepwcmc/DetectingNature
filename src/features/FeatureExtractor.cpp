@@ -21,6 +21,32 @@ ImageFeatures* FeatureExtractor::extract(Image& img) const {
 	}
 }
 
+float* FeatureExtractor::stackFeatures(float* descriptors,
+		unsigned int descriptorSize, unsigned int numDescriptors,
+		unsigned int width, unsigned int height, unsigned int numStacks) const {
+	
+	unsigned int stride = descriptorSize * numStacks * numStacks;
+	float* newDescriptors = new float[
+		(width - numStacks + 1) * (height - numStacks + 1) * stride];
+	
+	float* newDescPtr = newDescriptors;
+	float* descPtr = descriptors;
+	for(unsigned int y = 0; y < (height - numStacks + 1); y++) {
+		for(unsigned int x = 0; x < (width - numStacks + 1); x++) {	
+			for(unsigned int dx = 0; dx < numStacks; dx++) {
+				for(unsigned int dy = 0; dy < numStacks; dy++) {
+					unsigned int offset =  ((x + dx) * descriptorSize) +
+						((y + dy) * descriptorSize * width);
+					copy(descPtr + offset,
+						descPtr + offset + descriptorSize, newDescPtr);
+					newDescPtr += descriptorSize;
+				}
+			}
+		}
+	}
+	return newDescriptors;
+}
+
 ImageFeatures* FeatureExtractor::extractDsift(Image& img) const {
 	VlDsiftFilter* filter =
 		vl_dsift_new_basic(img.getWidth(), img.getHeight(),
@@ -30,8 +56,7 @@ ImageFeatures* FeatureExtractor::extractDsift(Image& img) const {
 		img.getWidth() - margin - 1, img.getHeight() - margin - 1);
 	vl_dsift_set_window_size(filter, 4);
 	
-	ImageFeatures* imageFeatures =
-		new ImageFeatures(
+	ImageFeatures* imageFeatures = new ImageFeatures(
 			img.getWidth(), img.getHeight(), img.getNumChannels());
 	
 	for(unsigned int i = 0; i < img.getNumChannels(); i++) {
@@ -61,25 +86,50 @@ ImageFeatures* FeatureExtractor::extractDsift(Image& img) const {
 }
 
 ImageFeatures* FeatureExtractor::extractHog(Image& img) const {
-/*
-	VlHog* hog = vl_hog_new(VlHogVariantDalalTriggs, 8, false);
-	vl_hog_put_image(hog, img.getData(), img.getWidth(), img.getHeight(),
-		1, 8);
+	ImageFeatures* imageFeatures = new ImageFeatures(
+			img.getWidth(), img.getHeight(), img.getNumChannels());
+			
+	unsigned int numStacks = 2;
+	
+	vector<pair<int, int> > coordinates;
+	for(unsigned int x = m_gridSpacing / 2; x < img.getWidth();
+			x += m_gridSpacing) {
+			
+		for(unsigned int y = m_gridSpacing / 2; y < img.getHeight();
+				y += m_gridSpacing) {
+				
+			coordinates.push_back(make_pair(x, y));
+		}
+	}
+	
+	for(unsigned int i = 0; i < img.getNumChannels(); i++) {
+		VlHog* hog = vl_hog_new(VlHogVariantUoctti, 9, false);
+		vl_hog_put_image(hog, img.getData(i), img.getWidth(), img.getHeight(),
+			1, m_gridSpacing);
 		
-	int descriptorSize = vl_hog_get_dimension(hog);
-	int numDescriptors = vl_hog_get_width(hog) * vl_hog_get_height(hog);
+		int descriptorSize = vl_hog_get_dimension(hog);
+		int numDescriptors = vl_hog_get_width(hog) * vl_hog_get_height(hog);
+
+		float* descriptors =
+			new float[descriptorSize * numDescriptors];
+		vl_hog_extract(hog, descriptors);
+		
+		unsigned int numDescX = (img.getWidth() + m_gridSpacing / 2)
+			/ m_gridSpacing;
+		unsigned int numDescY = (img.getHeight() + m_gridSpacing / 2)
+			/ m_gridSpacing;
+		float* newDescriptors = stackFeatures(descriptors, descriptorSize,
+			numDescriptors,	numDescX, numDescY, numStacks);
 	
-	float* descriptors =
-		new float[descriptorSize * numDescriptors];
-	vl_hog_extract(hog, descriptors);
+		imageFeatures->addFeatures(i, newDescriptors,
+			descriptorSize * numStacks,
+			(numDescX - numStacks + 1) * (numDescY - numStacks + 1),
+			coordinates);
 	
-	ImageFeatures* imageFeatures =
-		new ImageFeatures(descriptors, descriptorSize, numDescriptors);
-	
-	delete[] descriptors;
-	vl_hog_delete(hog);
+		delete[] descriptors;
+		delete[] newDescriptors;
+		vl_hog_delete(hog);
+	}
 	
 	return imageFeatures;
-*/
-	return nullptr;
 }
