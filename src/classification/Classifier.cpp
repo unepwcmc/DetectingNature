@@ -47,13 +47,10 @@ float* Classifier::flattenHistogramData() {
 	return data;
 }
 
-double Classifier::intersectionKernel(Histogram* a, Histogram* b) {
-	double kernelVal = 0;
-	const double* dataA = a->getData();
-	const double* dataB = b->getData();
-	
+inline double Classifier::intersectionKernel(Histogram* a, Histogram* b) {
+	double kernelVal = 0;	
 	for(unsigned int i = 0; i < a->getLength(); i++) {
-		kernelVal += min(dataA[i], dataB[i]);
+		kernelVal += min(a->getData()[i], b->getData()[i]);
 	}
 	return kernelVal;
 }
@@ -84,7 +81,10 @@ void Classifier::train(vector<Histogram*> histograms,
 	m_svmParams->eps = 1e-6;
 	m_svmParams->shrinking = 1;
 	m_svmParams->probability = 0;
-	m_svmParams->nr_weight = 0;
+	m_svmParams->nr_weight = 2;
+	m_svmParams->weight_label = new int[2] {0, 1};
+	m_svmParams->weight = new double[2]
+		{100.0 / (histograms.size() - 100.0), 1.0};
 
 	svm_node** kernel = new svm_node*[m_trainHistograms.size()];
 	
@@ -94,7 +94,6 @@ void Classifier::train(vector<Histogram*> histograms,
 		kernel[i] = new svm_node[m_trainHistograms.size() + 2];
 		kernel[i][0].index = 0;
 		kernel[i][0].value = i + 1;
-		#pragma omp parallel for
 		for(unsigned int j = 0; j < m_trainHistograms.size(); j++) {				
 			kernel[i][j+1].index = j + 1;
 			kernel[i][j+1].value =

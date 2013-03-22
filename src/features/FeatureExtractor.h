@@ -7,6 +7,8 @@ extern "C" {
 	#include <vl/hog.h>
 }
 
+#include <bitset>
+
 #include "features/Image.h"
 #include "features/ImageFeatures.h"
 
@@ -25,7 +27,8 @@ public:
 	 */
 	enum Type {
 		DSIFT, /**< Uses dense Scale Invariant Feature Transform descriptors */
-		HOG /**< Uses Histograms of Oriented Gradients descriptors */
+		HOG, /**< Uses Histograms of Oriented Gradients descriptors */
+		LBP /**< Used Local Binary Pattern descriptors */
 	};
 
 	/**
@@ -61,6 +64,7 @@ private:
 
 	ImageFeatures* extractDsift(Image& img) const;
 	ImageFeatures* extractHog(Image& img) const;
+	ImageFeatures* extractLbp(Image& img) const;
 	float* stackFeatures(float* descriptors, unsigned int descriptorSize,
 		unsigned int numDescriptors, unsigned int width,
 		unsigned int height, unsigned int numStacks) const;
