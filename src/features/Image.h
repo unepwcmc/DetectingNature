@@ -2,7 +2,10 @@
 #define IMAGE_H
 
 #include <string>
-#include <opencv2/highgui/highgui.hpp>
+#include <vector>
+
+#define cimg_display 0
+#include <CImg.h>
 
 /**
  * @brief Loads and stores the raw data of one image.

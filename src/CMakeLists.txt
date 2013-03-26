@@ -3,16 +3,16 @@ project(DetectingNature)
 cmake_policy(SET CMP0015 NEW)
 
 find_package(OpenMP REQUIRED)
-find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem serialization program_options REQUIRED)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/..)
-set(CMAKE_CXX_FLAGS "-g -O2 -Wall -Wextra -Wno-unused-parameter -std=c++11 ${OpenMP_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-g -O2 -march=native -Wall -Wextra -Wno-unused-parameter -std=c++11 ${OpenMP_CXX_FLAGS}")
 
 include_directories(.)
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(../libs/vlfeat-0.9.16/)
 link_directories(../libs/vlfeat-0.9.16/bin/glnx86/)
+include_directories(../libs/CImg-1.5.4/)
 
 add_executable(DetectingNature
 	utils/OutputHelper.cpp
@@ -30,7 +30,6 @@ add_executable(DetectingNature
 	framework/ClassificationFramework.cpp
 	main.cpp)
 
-target_link_libraries(DetectingNature ${OpenCV_LIBS})
 target_link_libraries(DetectingNature ${Boost_LIBRARIES})
 target_link_libraries(DetectingNature vl)
 target_link_libraries(DetectingNature svm)

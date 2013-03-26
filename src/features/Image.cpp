@@ -1,43 +1,48 @@
 #include "Image.h"
 #include "iostream"
 using namespace std;
+using namespace cimg_library;
 
 Image::Image(std::string filename, Colourspace colour) {
-	cv::Mat cvImg = cv::imread(filename, colour != GREYSCALE);
+	CImg<float> image = CImg<float>(filename.c_str());
+	if(colour == GREYSCALE && image.spectrum() > 1) {
+		image = image.RGBtoHSI().get_channel(2);
+	}
+	
+	int maxSize = max(image.height(), image.width());
+	if(maxSize > 1000) {
+		int resizeFactor = -100 * (1000.0 / maxSize);
+		image = image.resize(resizeFactor, resizeFactor, -100, -100, 5);
+	}
 
-	m_width = cvImg.rows;
-	m_height = cvImg.cols;
+	m_width = image.width();
+	m_height = image.height();
 
-	unsigned int numChannels = (colour == GREYSCALE) ? 1 : 3;
-	for(unsigned int i = 0; i < numChannels; i++) {
+	for(int i = 0; i < image.spectrum(); i++) {
 		m_data.push_back(new float[m_width * m_height]);
 	}
 	
 	for(unsigned int y = 0; y < m_height; y++) {
 		for(unsigned int x = 0; x < m_width; x++) {
 			if(colour == OPPONENT) {
-				cv::Point3_<unsigned char> point;
-				point =	cvImg.at<cv::Point3_<unsigned char> >(x, y);
-
-				m_data[0][y * m_width + x] = 0.5 * (255.0 + point.y - point.z);
+				float r, g, b;
+				r = image(x, y, 0, 0);
+				g = image(x, y, 0, 1);
+				b = image(x, y, 0, 2);
+				
+				m_data[0][y * m_width + x] = 0.5 * (255.0 + g - r);
 				m_data[1][y * m_width + x] =
-					0.25 * (510.0 + point.z + point.y - (2 * point.x));
+					0.25 * (510.0 + r + g - (2 * b));
 				m_data[2][y * m_width + x] =
-					1.0 / 3.0 * (point.z + point.y + point.x);
+					1.0 / 3.0 * (r + g + b);
 			} else if(colour == HSV) {
-				cv::Point3_<unsigned char> point
-					= cvImg.at<cv::Point3_<unsigned char> >(x, y);
-				
-				cv::Point3_<float> transformed;
-				transformed.x = point.x / 255.0;
-				transformed.y = point.y / 255.0;
-				transformed.z = point.z / 255.0;
-				
-				float maxColour = max(transformed.x,
-					max(transformed.y, transformed.z));
-				float minColour = min(transformed.x,
-					min(transformed.y, transformed.z));
-				
+				float r, g, b;
+				r = image(x, y, 0, 0) / 255.0;
+				g = image(x, y, 0, 1) / 255.0;
+				b = image(x, y, 0, 2) / 255.0;
+								
+				float maxColour = max(r, max(g, b));
+				float minColour = min(r, min(g, b));
 				float chroma = maxColour - minColour;
 				
 				float v = maxColour;
@@ -46,14 +51,12 @@ Image::Image(std::string filename, Colourspace colour) {
 				
 				// Ensure no divisions by zero occur
 				if(chroma != 0) {
-					if(v == transformed.z) {
-						h = 60.0 * (transformed.y - transformed.x) / chroma;
-					} else if(v == transformed.y) {
-						h = 120.0 + 60.0 * (transformed.x - transformed.z)
-							/ chroma;
+					if(v == r) {
+						h = 60.0 * (g - b) / chroma;
+					} else if(v == g) {
+						h = 120.0 + 60.0 * (b - r) / chroma;
 					} else {
-						h = 240.0 + 60.0 * (transformed.z - transformed.y)
-							/ chroma;
+						h = 240.0 + 60.0 * (r - g) / chroma;
 					}
 				}
 				
@@ -66,7 +69,7 @@ Image::Image(std::string filename, Colourspace colour) {
 				m_data[1][y * m_width + x] = 255.0 * s;
 				m_data[2][y * m_width + x] = h / 2.0;
 			} else {
-				m_data[0][y * m_width + x] = cvImg.at<unsigned char>(x, y);
+				m_data[0][y * m_width + x] = image(x, y);
 			}
 		}
 	}
