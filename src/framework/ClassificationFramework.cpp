@@ -45,14 +45,23 @@ Codebook* ClassificationFramework::prepareCodebook(
 	vector<ImageFeatures*> features;
 	features.resize(m_settings.textonImages, nullptr);
 
-	#pragma omp parallel for
-	for(unsigned int i = 0; i < m_settings.textonImages; i++) {
-		features[i] = extractFeature(imagePaths[i]);
-	}
-
 	Codebook* codebook = skipCache ?
 		nullptr : m_cacheHelper->load<Codebook>("codebook");
 	if(codebook == nullptr) {
+		unsigned int currentIter = 0;
+		#pragma omp parallel for
+		for(unsigned int i = 0; i < m_settings.textonImages; i++) {
+			features[i] = extractFeature(imagePaths[i]);
+		
+			#pragma omp critical
+			{
+				currentIter++;
+				OutputHelper::printProgress("Processing image "
+					+ DatasetManager::getFilename(imagePaths[i]),
+					currentIter, m_settings.textonImages);
+			}
+		}
+		
 		CodebookGenerator codebookGenerator(features);
 		codebook = codebookGenerator.generate(m_settings.textonImages,
 			m_settings.codewords, m_settings.histogramType);

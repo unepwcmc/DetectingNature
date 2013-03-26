@@ -62,11 +62,15 @@ ImageFeatures* FeatureExtractor::extractDsift(Image& img) const {
 			img.getWidth(), img.getHeight(), img.getNumChannels());
 	
 	for(unsigned int i = 0; i < img.getNumChannels(); i++) {
-		float smoothedData[img.getHeight() * img.getWidth()];
-		vl_imsmooth_f(smoothedData, img.getWidth(), img.getData(i),
-			img.getWidth(), img.getHeight(), img.getWidth(),
-			m_smoothingSigma, m_smoothingSigma);
-		vl_dsift_process(filter, smoothedData);
+		if(m_smoothingSigma > 0.0) {
+			float smoothedData[img.getHeight() * img.getWidth()];
+			vl_imsmooth_f(smoothedData, img.getWidth(), img.getData(i),
+				img.getWidth(), img.getHeight(), img.getWidth(),
+				m_smoothingSigma, m_smoothingSigma);
+			vl_dsift_process(filter, smoothedData);
+		} else {
+			vl_dsift_process(filter, img.getData(i));
+		}
 		
 		unsigned int descriptorSize = vl_dsift_get_descriptor_size(filter);
 		unsigned int numDescriptors = vl_dsift_get_keypoint_num(filter);
@@ -145,13 +149,11 @@ ImageFeatures* FeatureExtractor::extractLbp(Image& img) const {
 	for(unsigned int i = 0; i < img.getNumChannels(); i++) {
 		unsigned int numTransforms =
 			(img.getHeight() - 2) * (img.getWidth() - 2);
-		float* transforms = new float[numTransforms];
+		float* transforms = new float[numTransforms * 8];
 		
 		unsigned int transIndex = 0;
 		for(unsigned int y = 1; y < img.getHeight() - 1; y++) {
 			for(unsigned int x = 1; x < img.getWidth() - 1; x++) {
-				bitset<8> transform;
-				unsigned int bitIndex = 0;
 				double centerValue = img.getData(i)[y * img.getWidth() + x];
 			
 				for(unsigned int dy = y - 1; dy <= y + 1; dy++) {
@@ -160,10 +162,9 @@ ImageFeatures* FeatureExtractor::extractLbp(Image& img) const {
 							continue;
 						double neighbourValue =
 							img.getData(i)[dy * img.getWidth() + dx];
-						transform.set(bitIndex++, neighbourValue > centerValue);
+						transforms[transIndex++] = neighbourValue > centerValue;
 					}
 				}
-				transforms[transIndex++] = transform.to_ulong();
 			}
 		}
 		
@@ -174,7 +175,7 @@ ImageFeatures* FeatureExtractor::extractLbp(Image& img) const {
 			(img.getHeight() - m_patchSize - 2) / m_gridSpacing;
 		unsigned int descriptorSize = m_patchSize * m_patchSize;
 		unsigned int numDescriptors = numDescX * numDescY;
-		float* descriptors = new float[descriptorSize * numDescriptors];
+		float* descriptors = new float[descriptorSize * numDescriptors * 8];
 		unsigned int descIndex = 0;
 		for(unsigned int y = 0; y < img.getHeight() - 2 - m_patchSize;
 				y += m_gridSpacing) {
@@ -187,14 +188,16 @@ ImageFeatures* FeatureExtractor::extractLbp(Image& img) const {
 					
 				for(unsigned int dy = 0; dy < m_patchSize; dy++) {
 					for(unsigned int dx = 0; dx < m_patchSize; dx++) {
-						descriptors[descIndex++] = transforms[
-							((x + dx) + (y + dy) * (img.getWidth() - 2))];
+						memcpy(&descriptors[descIndex], &transforms[
+							(((x + dx) + (y + dy) * (img.getWidth() - 2)) * 8)],
+							8 * sizeof(float));
+						descIndex += 8;
 					}
 				}
 			}
 		}
 		
-		imageFeatures->addFeatures(i, descriptors, descriptorSize,
+		imageFeatures->addFeatures(i, descriptors, descriptorSize * 8,
 			numDescriptors, coordinates);
 		delete[] transforms;
 		delete[] descriptors;
