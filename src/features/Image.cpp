@@ -4,6 +4,7 @@ using namespace std;
 using namespace cimg_library;
 
 Image::Image(std::string filename, Colourspace colour) {
+	cimg::imagemagick_path("/usr/bin/convert");
 	CImg<float> image = CImg<float>(filename.c_str());
 	if(colour == GREYSCALE && image.spectrum() > 1) {
 		image = image.RGBtoHSI().get_channel(2);
