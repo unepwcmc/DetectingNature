@@ -28,7 +28,8 @@ public:
 	enum Type {
 		DSIFT, /**< Uses dense Scale Invariant Feature Transform descriptors */
 		HOG, /**< Uses Histograms of Oriented Gradients descriptors */
-		LBP /**< Used Local Binary Pattern descriptors */
+		LBP, /**< Used Local Binary Pattern descriptors */
+		ROOT_DSIFT /**< Uses DSIFT with a linear Hellinger transformation */
 	};
 
 	/**
@@ -62,6 +63,7 @@ private:
 	unsigned int m_gridSpacing;
 	unsigned int m_patchSize;
 
+	ImageFeatures* extractRootDsift(Image& img) const;
 	ImageFeatures* extractDsift(Image& img) const;
 	ImageFeatures* extractHog(Image& img) const;
 	ImageFeatures* extractLbp(Image& img) const;

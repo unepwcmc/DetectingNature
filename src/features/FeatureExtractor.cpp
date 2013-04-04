@@ -18,6 +18,8 @@ ImageFeatures* FeatureExtractor::extract(Image& img) const {
 		return extractDsift(img);
 	case LBP:
 		return extractLbp(img);
+	case ROOT_DSIFT:
+		return extractRootDsift(img);
 	default:
 		return nullptr;
 	}
@@ -47,6 +49,36 @@ float* FeatureExtractor::stackFeatures(float* descriptors,
 		}
 	}
 	return newDescriptors;
+}
+
+ImageFeatures* FeatureExtractor::extractRootDsift(Image& img) const {
+	ImageFeatures* origFeatures = extractDsift(img);
+	ImageFeatures* transformedFeatures = new ImageFeatures(
+		img.getWidth(), img.getHeight(), img.getNumChannels());
+	
+	vector<pair<int, int> > coordinates;
+	unsigned int descriptorSize = origFeatures->getDescriptorSize();
+	unsigned int numDescriptors = origFeatures->getNumFeatures();
+	float* newDescriptors = new float[numDescriptors * descriptorSize];
+	for(unsigned int i = 0; i < numDescriptors; i++) {
+		const float* descriptor = origFeatures->getFeature(i);
+		double l1norm = 1e-10;
+		for(unsigned int j = 0; j < descriptorSize; j++) {
+			l1norm += fabs(descriptor[j]);
+		}
+		
+		for(unsigned int j = 0; j < descriptorSize; j++) {
+			newDescriptors[i * descriptorSize + j] =
+				sqrt(descriptor[j] / l1norm);
+		}
+		coordinates.push_back(origFeatures->getCoordinates(i));
+	}
+	transformedFeatures->newFeatures(newDescriptors, descriptorSize,
+		numDescriptors, coordinates);
+	
+	delete[] newDescriptors;
+	delete origFeatures;
+	return transformedFeatures;
 }
 
 ImageFeatures* FeatureExtractor::extractDsift(Image& img) const {
