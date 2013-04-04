@@ -1,6 +1,17 @@
 Detecting Nature In Pictures
 ===============
 
+Dependencies
+---------------
+
+* [CImg](http://cimg.sourceforge.net/) >= 1.5.4
+
+* [Boost](http://www.boost.org/) >= 1.50.0
+
+* [VLFeat](http://www.vlfeat.org/) >= 0.9.16
+
+* [LIBSVM](http://www.csie.ntu.edu.tw/~cjlin/libsvm/) >= 3.12
+
 Building
 ---------------
 
@@ -13,7 +24,7 @@ Building
 Building documentation
 ---------------
 
-1. Run `doxygen doxyfile`
+1. Run `doxygen`
 
 2. Output is saved to the `./docs` folder
 

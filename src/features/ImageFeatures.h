@@ -27,17 +27,11 @@ public:
 		unsigned int numChannels);
 	
 	/**
-	 * @brief Stores the extracted features for an image.
+	 * @brief Stores a new set of features for an image.
 	 *
-	 * If the image contains more than one channel, the features will be
-	 * appended, creating a larger descriptor.
-	 *
-	 * @warning Until this function has been called for all channels, the
-	 * arrays returned by getFeature() and getFeatures() may contain
-	 * invalid data.
+	 * These features will be added to the end of the feature list, with
+	 * no transformation applied.
 	 * 
-	 * @param channel The image channel where these features were
-	 * extracted from.
 	 * @param features An array with all the extracted features for this
 	 * channel.
 	 * @param descriptorSize The length of each descriptor.
@@ -45,14 +39,33 @@ public:
 	 * @param coordinates The keypoint where the features were extracted.
 	 * These must be presented in the same order as the @a features array.
 	 */
-
-		
-	void extendFeatures(unsigned int channel, float const* features,
-		unsigned int numFeatures);
 	void newFeatures(float const* features,
 		unsigned int descriptorSize, unsigned int numFeatures,
 		std::vector<std::pair<int, int> > coordinates);
 	
+	/**
+	 * @brief Extends the extracted features for an image.
+	 *
+	 * When the image contains more than one channel, this functions will
+	 * append the extra features to the existing descriptors,
+	 * creating a longer descriptor.
+	 *
+	 * @warning Until this function has been called for all channels greater
+	 * than zero and lower than the value defined for @a numChannels during the
+	 * construction of this class, the arrays returned by getFeature() and
+	 * getFeatures() may contain invalid data.
+	 * 
+	 * @see newFeatures()
+	 * 
+	 * @param channel The image channel where these features were
+	 * extracted from.
+	 * @param features An array with all the extracted features for this
+	 * channel.
+	 * @param numFeatures The number of features in the @a features array.
+	 */
+	void extendFeatures(unsigned int channel, float const* features,
+		unsigned int numFeatures);
+
 	/**
 	 * @brief Returns the total number of stored features.
 	 *
