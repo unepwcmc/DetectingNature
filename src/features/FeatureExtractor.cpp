@@ -50,44 +50,54 @@ float* FeatureExtractor::stackFeatures(float* descriptors,
 }
 
 ImageFeatures* FeatureExtractor::extractDsift(Image& img) const {
-	VlDsiftFilter* filter =
-		vl_dsift_new_basic(img.getWidth(), img.getHeight(),
-			m_gridSpacing, m_patchSize / 4);
-	int margin = m_patchSize / 8;
-	vl_dsift_set_bounds(filter, margin, margin,
-		img.getWidth() - margin - 1, img.getHeight() - margin - 1);
-	vl_dsift_set_window_size(filter, 4);
-	
 	ImageFeatures* imageFeatures = new ImageFeatures(
-			img.getWidth(), img.getHeight(), img.getNumChannels());
+		img.getWidth(), img.getHeight(), img.getNumChannels());
 	
-	for(unsigned int i = 0; i < img.getNumChannels(); i++) {
-		if(m_smoothingSigma > 0.0) {
-			float smoothedData[img.getHeight() * img.getWidth()];
-			vl_imsmooth_f(smoothedData, img.getWidth(), img.getData(i),
-				img.getWidth(), img.getHeight(), img.getWidth(),
-				m_smoothingSigma, m_smoothingSigma);
-			vl_dsift_process(filter, smoothedData);
-		} else {
-			vl_dsift_process(filter, img.getData(i));
+	unsigned int numConcentricDesc = 1;
+	unsigned int mainBinSize = m_patchSize / 4;
+	for(unsigned int h = 0; h < numConcentricDesc; h++) {
+		unsigned int binSize = mainBinSize - 2 * h;
+	
+		VlDsiftFilter* filter =
+			vl_dsift_new_basic(img.getWidth(), img.getHeight(),
+				m_gridSpacing, binSize);
+		int margin = (mainBinSize / 2) + (3.0 / 2.0 * (mainBinSize - binSize));
+		vl_dsift_set_bounds(filter, margin, margin,
+			img.getWidth() - margin - 1, img.getHeight() - margin - 1);
+		vl_dsift_set_flat_window(filter, true);
+	
+		for(unsigned int i = 0; i < img.getNumChannels(); i++) {
+			if(m_smoothingSigma > 0.0) {
+				float smoothedData[img.getHeight() * img.getWidth()];
+				vl_imsmooth_f(smoothedData, img.getWidth(), img.getData(i),
+					img.getWidth(), img.getHeight(), img.getWidth(),
+					m_smoothingSigma, m_smoothingSigma);
+				vl_dsift_process(filter, smoothedData);
+			} else {
+				vl_dsift_process(filter, img.getData(i));
+			}
+	
+			unsigned int descriptorSize = vl_dsift_get_descriptor_size(filter);
+			unsigned int numDescriptors = vl_dsift_get_keypoint_num(filter);
+			float const* descriptors = vl_dsift_get_descriptors(filter);
+
+			vector<pair<int, int> > coordinates;
+			const VlDsiftKeypoint* keypoints = vl_dsift_get_keypoints(filter);
+			for(unsigned int j = 0; j < numDescriptors; j++) {
+				coordinates.push_back(
+					make_pair(keypoints[j].x, keypoints[j].y));
+			}
+
+			if(i == 0) {
+				imageFeatures->newFeatures(descriptors, descriptorSize,
+					numDescriptors, coordinates);
+			} else {
+				imageFeatures->extendFeatures(i, descriptors, numDescriptors);
+			}
 		}
-		
-		unsigned int descriptorSize = vl_dsift_get_descriptor_size(filter);
-		unsigned int numDescriptors = vl_dsift_get_keypoint_num(filter);
-		float const* descriptors = vl_dsift_get_descriptors(filter);
 	
-		vector<pair<int, int> > coordinates;
-		const VlDsiftKeypoint* keypoints = vl_dsift_get_keypoints(filter);
-		for(unsigned int j = 0; j < numDescriptors; j++) {
-			coordinates.push_back(make_pair(keypoints[j].x, keypoints[j].y));
-		}
-	
-		imageFeatures->addFeatures(i, descriptors, descriptorSize,
-			numDescriptors, coordinates);
+		vl_dsift_delete(filter);
 	}
-	
-	vl_dsift_delete(filter);
-	
 	return imageFeatures;
 }
 
@@ -127,10 +137,15 @@ ImageFeatures* FeatureExtractor::extractHog(Image& img) const {
 		float* newDescriptors = stackFeatures(descriptors, descriptorSize,
 			numDescriptors,	numDescX, numDescY, numStacks);
 	
-		imageFeatures->addFeatures(i, newDescriptors,
-			descriptorSize * numStacks,
-			(numDescX - numStacks + 1) * (numDescY - numStacks + 1),
-			coordinates);
+		if(i == 0) {
+			imageFeatures->newFeatures(newDescriptors,
+				descriptorSize * numStacks,
+				(numDescX - numStacks + 1) * (numDescY - numStacks + 1),
+				coordinates);
+		} else {
+			imageFeatures->extendFeatures(i, newDescriptors,
+				(numDescX - numStacks + 1) * (numDescY - numStacks + 1));
+		}
 	
 		delete[] descriptors;
 		delete[] newDescriptors;
@@ -197,8 +212,12 @@ ImageFeatures* FeatureExtractor::extractLbp(Image& img) const {
 			}
 		}
 		
-		imageFeatures->addFeatures(i, descriptors, descriptorSize * 8,
-			numDescriptors, coordinates);
+		if(i == 0) {
+			imageFeatures->newFeatures(descriptors, descriptorSize * 8,
+				numDescriptors, coordinates);
+		} else {
+			imageFeatures->extendFeatures(i, descriptors, numDescriptors);
+		}
 		delete[] transforms;
 		delete[] descriptors;
 	}

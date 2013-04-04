@@ -45,7 +45,11 @@ public:
 	 * @param coordinates The keypoint where the features were extracted.
 	 * These must be presented in the same order as the @a features array.
 	 */
-	void addFeatures(unsigned int channel, float const* features,
+
+		
+	void extendFeatures(unsigned int channel, float const* features,
+		unsigned int numFeatures);
+	void newFeatures(float const* features,
 		unsigned int descriptorSize, unsigned int numFeatures,
 		std::vector<std::pair<int, int> > coordinates);
 	
