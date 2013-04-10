@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
 		("help", "print this message")
 		("dataset", po::value<string>(),
 			"folder containing the dataset to use for training")
-		("settings", po::value<string>()->default_value("settings.xml"),
+		("settings", po::value<string>()->default_value("settings.json"),
 			"file containing all the classification parameters")
 		("num-runs", po::value<unsigned int>(&numRuns)->default_value(1),
 			"number of times to run the classifier")
