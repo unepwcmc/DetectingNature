@@ -1,0 +1,24 @@
+{
+	"features": {
+		"colourspace": 0,
+		"type": 3,
+		"smoothingsigma": 0.0,
+		"gridspacing": 10,
+		"patchsize": 20
+	},
+	
+	"codebook": {
+		"textonimages": 250,
+		"codewords": 50
+	},
+	
+	"histogram": {
+		"type": 1,
+		"pyramidlevels": 2
+	},
+	
+	"classifier": {
+		"c": 1.0,
+		"imagesperclass": 100
+	}
+}

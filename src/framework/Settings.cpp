@@ -18,23 +18,23 @@ Settings::Settings() {
 
 Settings::Settings(std::string filename) {
 	ptree tree;
-	read_xml(filename, tree);
+	read_json(filename, tree);
 	
 	colourspace =
-		(Image::Colourspace)tree.get("settings.features.colourspace", 0);
+		(Image::Colourspace)tree.get("features.colourspace", 0);
 	featureType =
-		(FeatureExtractor::Type)tree.get("settings.features.type", 0);
+		(FeatureExtractor::Type)tree.get("features.type", 0);
 	
-	smoothingSigma = tree.get("settings.features.smoothingsigma", 0);
-	gridSpacing = tree.get("settings.features.gridspacing", 8);
-	patchSize = tree.get("settings.features.patchsize", 16);
+	smoothingSigma = tree.get("features.smoothingsigma", 0);
+	gridSpacing = tree.get("features.gridspacing", 8);
+	patchSize = tree.get("features.patchsize", 16);
 	
-	textonImages = tree.get("settings.codebook.textonimages", 50);
-	codewords = tree.get("settings.codebook.codewords", 200);
+	textonImages = tree.get("codebook.textonimages", 50);
+	codewords = tree.get("codebook.codewords", 200);
 	
-	histogramType = (Codebook::Type)tree.get("settings.histograms.type", 0);
-	pyramidLevels = tree.get("settings.histograms.pyramidlevels", 2);
+	histogramType = (Codebook::Type)tree.get("histograms.type", 0);
+	pyramidLevels = tree.get("histograms.pyramidlevels", 2);
 	
-	C = tree.get("settings.classifier.c", 10.0);
-	trainImagesPerClass = tree.get("settings.classifier.imagesperclass", 100);
+	C = tree.get("classifier.c", 10.0);
+	trainImagesPerClass = tree.get("classifier.imagesperclass", 100);
 }
