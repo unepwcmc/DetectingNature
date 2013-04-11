@@ -4,8 +4,6 @@
 #include <bitset>
 
 #include "features/FeatureExtractor.h"
-#include "features/Image.h"
-#include "features/ImageFeatures.h"
 #include "framework/SettingsManager.h"
 
 /**
@@ -26,7 +24,7 @@ public:
 	 */
 	LBPFeatureExtractor(const SettingsManager* settings);
 	
-	ImageFeatures* extract(Image& img) const;
+	ImageFeatures* extract(const ImageData* img) const;
 	
 private:
 	unsigned int m_gridSpacing;

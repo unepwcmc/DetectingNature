@@ -24,7 +24,7 @@ string CacheHelper::getCacheFolder(string filename,
 	
 	stringstream cacheNameStream;
 	cacheNameStream	<< 
-		"_" << m_settings->get<int>("image.colourspace") <<
+		"_" << m_settings->get<string>("image.type") <<
 		"_" << m_settings->get<float>("image.smoothingSigma") << 
 		"_" << m_settings->get<string>("features.type") <<
 		"_" << m_settings->get<int>("features.gridSpacing") <<
@@ -37,7 +37,7 @@ string CacheHelper::getCacheFolder(string filename,
 	cacheNameStream	<<
 		"_" << m_settings->get<int>("codebook.textonImages") <<
 		"_" << m_settings->get<int>("codebook.codewords") <<
-		"_" << m_settings->get<int>("histogram.type") <<
+		"_" << m_settings->get<string>("histogram.type") <<
 		"_" << m_settings->get<int>("histogram.pyramidLevels");
 	
 	return basePath + cacheNameStream.str() + "/";

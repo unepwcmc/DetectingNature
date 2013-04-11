@@ -32,27 +32,27 @@ float* HOGFeatureExtractor::stackFeatures(float* descriptors,
 	return newDescriptors;
 }
 
-ImageFeatures* HOGFeatureExtractor::extract(Image& img) const {
+ImageFeatures* HOGFeatureExtractor::extract(const ImageData* img) const {
 	ImageFeatures* imageFeatures = new ImageFeatures(
-		img.getWidth(), img.getHeight(), img.getNumChannels());
+		img->getWidth(), img->getHeight(), img->getNumChannels());
 			
 	unsigned int numStacks = 2;
 	
 	vector<pair<int, int> > coordinates;
-	for(unsigned int x = m_gridSpacing / 2; x < img.getWidth();
+	for(unsigned int x = m_gridSpacing / 2; x < img->getWidth();
 			x += m_gridSpacing) {
 			
-		for(unsigned int y = m_gridSpacing / 2; y < img.getHeight();
+		for(unsigned int y = m_gridSpacing / 2; y < img->getHeight();
 				y += m_gridSpacing) {
 				
 			coordinates.push_back(make_pair(x, y));
 		}
 	}
 	
-	for(unsigned int i = 0; i < img.getNumChannels(); i++) {
+	for(unsigned int i = 0; i < img->getNumChannels(); i++) {
 		VlHog* hog = vl_hog_new(VlHogVariantUoctti, 9, false);
-		vl_hog_put_image(hog, img.getData(i), img.getWidth(), img.getHeight(),
-			1, m_gridSpacing);
+		vl_hog_put_image(hog, img->getData(i), img->getWidth(),
+			img->getHeight(), 1, m_gridSpacing);
 		
 		int descriptorSize = vl_hog_get_dimension(hog);
 		int numDescriptors = vl_hog_get_width(hog) * vl_hog_get_height(hog);
@@ -61,9 +61,9 @@ ImageFeatures* HOGFeatureExtractor::extract(Image& img) const {
 			new float[descriptorSize * numDescriptors];
 		vl_hog_extract(hog, descriptors);
 		
-		unsigned int numDescX = (img.getWidth() + m_gridSpacing / 2)
+		unsigned int numDescX = (img->getWidth() + m_gridSpacing / 2)
 			/ m_gridSpacing;
-		unsigned int numDescY = (img.getHeight() + m_gridSpacing / 2)
+		unsigned int numDescY = (img->getHeight() + m_gridSpacing / 2)
 			/ m_gridSpacing;
 		float* newDescriptors = stackFeatures(descriptors, descriptorSize,
 			numDescriptors,	numDescX, numDescY, numStacks);

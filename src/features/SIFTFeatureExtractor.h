@@ -7,8 +7,6 @@ extern "C" {
 }
 
 #include "features/FeatureExtractor.h"
-#include "features/Image.h"
-#include "features/ImageFeatures.h"
 #include "framework/SettingsManager.h"
 
 /**
@@ -27,7 +25,7 @@ public:
 	 */
 	SIFTFeatureExtractor(const SettingsManager* settings);
 
-	ImageFeatures* extract(Image& img) const;
+	ImageFeatures* extract(const ImageData* img) const;
 	
 private:
 	float m_smoothingSigma;

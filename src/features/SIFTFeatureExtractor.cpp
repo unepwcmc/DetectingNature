@@ -7,9 +7,9 @@ SIFTFeatureExtractor::SIFTFeatureExtractor(const SettingsManager* settings) {
 	m_patchSize = settings->get<int>("features.patchSize");
 }
 
-ImageFeatures* SIFTFeatureExtractor::extract(Image& img) const {
+ImageFeatures* SIFTFeatureExtractor::extract(const ImageData* img) const {
 	ImageFeatures* imageFeatures = new ImageFeatures(
-		img.getWidth(), img.getHeight(), img.getNumChannels());
+		img->getWidth(), img->getHeight(), img->getNumChannels());
 	
 	unsigned int numConcentricDesc = 8;
 	unsigned int mainBinSize = m_patchSize / 4;
@@ -17,22 +17,22 @@ ImageFeatures* SIFTFeatureExtractor::extract(Image& img) const {
 		unsigned int binSize = mainBinSize + 1.2 * h;
 	
 		VlDsiftFilter* filter =
-			vl_dsift_new_basic(img.getWidth(), img.getHeight(),
+			vl_dsift_new_basic(img->getWidth(), img->getHeight(),
 				binSize * 2, binSize);
 		int margin = (binSize / 2);// + (3.0 / 2.0 * (mainBinSize - binSize));
 		vl_dsift_set_bounds(filter, margin, margin,
-			img.getWidth() - margin - 1, img.getHeight() - margin - 1);
+			img->getWidth() - margin - 1, img->getHeight() - margin - 1);
 		vl_dsift_set_flat_window(filter, true);
 	
-		for(unsigned int i = 0; i < img.getNumChannels(); i++) {
+		for(unsigned int i = 0; i < img->getNumChannels(); i++) {
 			if(m_smoothingSigma > 0.0) {
-				float smoothedData[img.getHeight() * img.getWidth()];
-				vl_imsmooth_f(smoothedData, img.getWidth(), img.getData(i),
-					img.getWidth(), img.getHeight(), img.getWidth(),
+				float smoothedData[img->getHeight() * img->getWidth()];
+				vl_imsmooth_f(smoothedData, img->getWidth(), img->getData(i),
+					img->getWidth(), img->getHeight(), img->getWidth(),
 					m_smoothingSigma, m_smoothingSigma);
 				vl_dsift_process(filter, smoothedData);
 			} else {
-				vl_dsift_process(filter, img.getData(i));
+				vl_dsift_process(filter, img->getData(i));
 			}
 	
 			unsigned int descriptorSize = vl_dsift_get_descriptor_size(filter);

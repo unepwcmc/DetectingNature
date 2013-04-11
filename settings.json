@@ -1,6 +1,6 @@
 {
 	"image": {
-		"colourspace": 0,
+		"type": "Greyscale", //Greyscale, Opponent, HSV
 		"smoothingSigma": 0.0
 	},
 	
@@ -8,20 +8,22 @@
 		"type": "SIFT", //SIFT, HOG, LBP
 		"gridSpacing": 10,
 		"patchSize": 20,
-		"transforms": "Hellinger"
+		"transforms": "Hellinger" //Hellinger
 	},
 	
 	"codebook": {
+		"type": "Fisher", //Fisher, KMeans
 		"textonImages": 150,
 		"codewords": 50
 	},
 	
 	"histogram": {
-		"type": 1,
+		"type": "Slices", //Slices, Squares
 		"pyramidLevels": 2
 	},
 	
 	"classifier": {
+		"type": "Linear", //LINEAR, SVM
 		"c": 1.0,
 		"trainImagesPerClass": 1000
 	}

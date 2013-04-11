@@ -9,7 +9,7 @@ extern "C" {
 
 #include <bitset>
 
-#include "features/Image.h"
+#include "images/ImageData.h"
 #include "features/ImageFeatures.h"
 
 /**
@@ -32,7 +32,7 @@ public:
 	 * @param img The raw image data to be processed.
 	 * @return All the features extracted for this image.
 	 */
-	virtual ImageFeatures* extract(Image& img) const = 0;
+	virtual ImageFeatures* extract(const ImageData* img) const = 0;
 };
 
 #endif

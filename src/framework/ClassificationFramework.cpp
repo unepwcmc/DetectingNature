@@ -6,6 +6,8 @@ typedef boost::function<FeatureExtractor*(const SettingsManager*)>
 	featureFactory_t;
 typedef boost::function<FeatureTransform*(const SettingsManager*)>
 	transformFactory_t;
+typedef boost::function<ImageLoader*(const SettingsManager*)>
+	loaderFactory_t;
 
 ClassificationFramework::ClassificationFramework(string datasetPath,
 		const SettingsManager* settings, bool skipCache) {
@@ -24,6 +26,12 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 	}
 	
 	// Initialize factory maps
+	
+	map<string, loaderFactory_t> loaderFactories;
+	loaderFactories["Greyscale"] = boost::factory<GreyscaleImageLoader*>();
+	loaderFactories["Opponent"] = boost::factory<OpponentImageLoader*>();
+	loaderFactories["HSV"] = boost::factory<HSVImageLoader*>();
+	
 	map<string, featureFactory_t> featureFactories;
 	featureFactories["SIFT"] = boost::factory<SIFTFeatureExtractor*>();
 	featureFactories["HOG"] = boost::factory<HOGFeatureExtractor*>();
@@ -34,6 +42,9 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 		boost::factory<HellingerFeatureTransform*>();
 
 	// Create instances from the settings file using the factory maps
+	m_imageLoader =
+		loaderFactories[m_settings->get<string>("image.type")](m_settings);
+	
 	m_featureExtractor =
 		featureFactories[m_settings->get<string>("features.type")](m_settings);
 	
@@ -55,9 +66,9 @@ ImageFeatures* ClassificationFramework::extractFeature(string imagePath) {
 	ImageFeatures* features = m_cacheHelper->load<ImageFeatures>(imagePath);
 	if(features == nullptr) {
 		// Extract features
-		Image img(imagePath,
-			(Image::Colourspace)m_settings->get<int>("image.colourspace"));
+		ImageData* img = m_imageLoader->loadImage(imagePath);
 		features = m_featureExtractor->extract(img);
+		delete img;
 		
 		// Apply transformations
 		for(unsigned int i = 0; i < m_featureTransforms.size(); i++) {
@@ -98,7 +109,8 @@ Codebook* ClassificationFramework::prepareCodebook(
 		codebook = codebookGenerator.generate(
 			m_settings->get<int>("codebook.textonImages"),
 			m_settings->get<int>("codebook.codewords"),
-			(Codebook::Type)m_settings->get<int>("histogram.type"));
+			(Codebook::Type)0);
+			//m_settings->get<string>("histogram.type"));
 		m_cacheHelper->save<Codebook>("codebook", codebook);
 	}
 	

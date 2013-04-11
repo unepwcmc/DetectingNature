@@ -8,6 +8,9 @@
 
 #include "utils/CacheHelper.h"
 #include "utils/DatasetManager.h"
+#include "images/HSVImageLoader.h"
+#include "images/OpponentImageLoader.h"
+#include "images/GreyscaleImageLoader.h"
 #include "features/LBPFeatureExtractor.h"
 #include "features/HOGFeatureExtractor.h"
 #include "features/SIFTFeatureExtractor.h"
@@ -67,10 +70,12 @@ public:
 private:
 	bool m_skipCache;
 	const SettingsManager* m_settings;
+	
 	CacheHelper* m_cacheHelper;
 	DatasetManager* m_datasetManager;
-	FeatureExtractor* m_featureExtractor;
-	std::vector<FeatureTransform*> m_featureTransforms;
+	ImageLoader* m_imageLoader;
+	FeatureExtractor* m_featureExtractor;	
+	std::vector<FeatureTransform*> m_featureTransforms;	
 	std::vector<std::string> m_imagePaths;
 	std::string m_cachePath;
 	

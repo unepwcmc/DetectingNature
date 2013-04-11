@@ -28,7 +28,11 @@ link_directories(
 add_executable(DetectingNature
 	utils/OutputHelper.cpp
 	utils/CacheHelper.cpp
-	features/Image.cpp
+	images/ImageData.cpp
+	images/ImageLoader.cpp
+	images/HSVImageLoader.cpp
+	images/OpponentImageLoader.cpp
+	images/GreyscaleImageLoader.cpp
 	features/ImageFeatures.cpp
 	features/LBPFeatureExtractor.cpp
 	features/HOGFeatureExtractor.cpp
