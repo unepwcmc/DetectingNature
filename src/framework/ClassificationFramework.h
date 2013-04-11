@@ -3,12 +3,18 @@
 
 #include <fstream>
 
+#include <boost/algorithm/string/split.hpp>
+#include <boost/functional/factory.hpp>
+
 #include "utils/CacheHelper.h"
 #include "utils/DatasetManager.h"
-#include "features/FeatureExtractor.h"
+#include "features/LBPFeatureExtractor.h"
+#include "features/HOGFeatureExtractor.h"
+#include "features/SIFTFeatureExtractor.h"
+#include "features/HellingerFeatureTransform.h"
 #include "codebook/CodebookGenerator.h"
 #include "classification/Classifier.h"
-#include "framework/Settings.h"
+#include "framework/SettingsManager.h"
 
 /**
  * @brief Main class for the classification of images.
@@ -32,7 +38,7 @@ public:
 	 * between multiple runs.
 	 */
 	ClassificationFramework(std::string datasetPath,
-		Settings &settings, bool skipCache);
+		const SettingsManager *settings, bool skipCache);
 	~ClassificationFramework();
 	
 	/**
@@ -60,10 +66,11 @@ public:
 
 private:
 	bool m_skipCache;
-	Settings m_settings;
+	const SettingsManager* m_settings;
 	CacheHelper* m_cacheHelper;
 	DatasetManager* m_datasetManager;
 	FeatureExtractor* m_featureExtractor;
+	std::vector<FeatureTransform*> m_featureTransforms;
 	std::vector<std::string> m_imagePaths;
 	std::string m_cachePath;
 	

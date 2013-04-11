@@ -148,6 +148,15 @@ public:
 		return m_height;
 	}
 	
+	/**
+	 * @brief Returns the number of channels of the original image.
+	 *
+	 * @return The number of channels of the image.
+	 */
+	unsigned int getNumChannels() const {
+		return m_numChannels;
+	}
+	
 private:
 	unsigned int m_numChannels;
 	unsigned int m_descriptorSize;

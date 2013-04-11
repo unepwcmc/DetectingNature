@@ -1,7 +1,7 @@
 #include "CacheHelper.h"
 using namespace std;
 
-CacheHelper::CacheHelper(string datasetPath, Settings& settings) {
+CacheHelper::CacheHelper(string datasetPath, const SettingsManager* settings) {
 	m_datasetPath = datasetPath;
 	m_settings = settings;
 }
@@ -11,8 +11,12 @@ CacheHelper::CacheHelper(string datasetPath, Settings& settings) {
 string CacheHelper::getCacheFolder(string filename,
 		const type_info& dataType) const {
 	
+	string dataTypeName = dataType.name();
+	dataTypeName.erase(
+		boost::remove_if(dataTypeName, ::isdigit), dataTypeName.end());
+	
 	string basePath = "cache/" + m_datasetPath +
-			"/" + dataType.name();
+			"/" + dataTypeName;
 	
 	if(dataType == typeid(DatasetManager)) {
 		return basePath + "/";
@@ -20,21 +24,21 @@ string CacheHelper::getCacheFolder(string filename,
 	
 	stringstream cacheNameStream;
 	cacheNameStream	<< 
-		"_" << m_settings.colourspace <<
-		"_" << m_settings.featureType <<
-		"_" << m_settings.smoothingSigma << 
-		"_" << m_settings.gridSpacing <<
-		"_" << m_settings.patchSize;
+		"_" << m_settings->get<int>("image.colourspace") <<
+		"_" << m_settings->get<float>("image.smoothingSigma") << 
+		"_" << m_settings->get<string>("features.type") <<
+		"_" << m_settings->get<int>("features.gridSpacing") <<
+		"_" << m_settings->get<int>("features.patchSize");
 		
 	if(dataType == typeid(ImageFeatures)) {
 		return basePath + cacheNameStream.str() + "/";
 	}
 	
 	cacheNameStream	<<
-		"_" << m_settings.textonImages <<
-		"_" << m_settings.codewords <<
-		"_" << m_settings.histogramType <<
-		"_" << m_settings.pyramidLevels;	
+		"_" << m_settings->get<int>("codebook.textonImages") <<
+		"_" << m_settings->get<int>("codebook.codewords") <<
+		"_" << m_settings->get<int>("histogram.type") <<
+		"_" << m_settings->get<int>("histogram.pyramidLevels");
 	
 	return basePath + cacheNameStream.str() + "/";
 }

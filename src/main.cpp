@@ -40,13 +40,13 @@ int main(int argc, char** argv) {
 	}	
 	
 	// Load classification parameters from the given XML file
-	Settings settings(vm["settings"].as<string>());
+	SettingsManager settings(vm["settings"].as<string>());
 	
 	// Choose one of two modes:
 	//  - classify unknown pictures
 	//  - classify known pictures to get accuracy statistics
 	if(vm.count("classify")) {
-		ClassificationFramework cf(datasetPath, settings, numRuns != 1);
+		ClassificationFramework cf(datasetPath, &settings, numRuns != 1);
 		map<string, string> results = cf.classify(vm["classify"].as<string>());
 		
 		// Print the predicted class for each image
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 		// Classify the known image 'numRuns' times
 		double results[numRuns];
 		for(unsigned int i = 0; i < numRuns; i++) {
-			ClassificationFramework cf(datasetPath, settings, numRuns != 1);
+			ClassificationFramework cf(datasetPath, &settings, numRuns != 1);
 			results[i] = cf.testRun();
 		}
 		

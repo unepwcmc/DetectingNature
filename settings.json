@@ -1,24 +1,28 @@
 {
-	"features": {
+	"image": {
 		"colourspace": 0,
-		"type": 3,
-		"smoothingsigma": 0.0,
-		"gridspacing": 10,
-		"patchsize": 20
+		"smoothingSigma": 0.0
+	},
+	
+	"features": {
+		"type": "SIFT", //SIFT, HOG, LBP
+		"gridSpacing": 10,
+		"patchSize": 20,
+		"transforms": "Hellinger"
 	},
 	
 	"codebook": {
-		"textonimages": 250,
+		"textonImages": 150,
 		"codewords": 50
 	},
 	
 	"histogram": {
 		"type": 1,
-		"pyramidlevels": 2
+		"pyramidLevels": 2
 	},
 	
 	"classifier": {
 		"c": 1.0,
-		"imagesperclass": 100
+		"trainImagesPerClass": 1000
 	}
 }

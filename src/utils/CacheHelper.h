@@ -1,14 +1,16 @@
 #ifndef CACHE_HELPER_H
 #define CACHE_HELPER_H
 
+#include <cctype>
 #include <string>
 
+#include <boost/range/algorithm/remove_if.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/filesystem.hpp>
 
-#include "framework/Settings.h"
+#include "framework/SettingsManager.h"
 #include "features/ImageFeatures.h"
 #include "utils/DatasetManager.h"
 
@@ -29,7 +31,7 @@ public:
 	 * @param settings The application settings. Used to prevent false cache
 	 * hits when different settings are used for the same dataset.
 	 */
-	CacheHelper(std::string datasetPath, Settings& settings);
+	CacheHelper(std::string datasetPath, const SettingsManager* settings);
 	
 	/**
 	 * @brief Load the data from the hard drive.
@@ -80,7 +82,7 @@ public:
 
 private:
 	std::string m_datasetPath;
-	Settings m_settings;
+	const SettingsManager* m_settings;
 	
 	std::string getCacheFolder(std::string filename, 
 		const std::type_info& dataType) const;

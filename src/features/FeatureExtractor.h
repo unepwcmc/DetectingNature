@@ -22,30 +22,7 @@ extern "C" {
  */
 class FeatureExtractor {
 public:
-	/**
-	 * @brief The type of descriptor to use to represent the image features
-	 */
-	enum Type {
-		DSIFT, /**< Uses dense Scale Invariant Feature Transform descriptors */
-		HOG, /**< Uses Histograms of Oriented Gradients descriptors */
-		LBP, /**< Used Local Binary Pattern descriptors */
-		ROOT_DSIFT /**< Uses DSIFT with a linear Hellinger transformation */
-	};
-
-	/**
-	 * @brief Sets up the feature extraction parameters.
-	 *
-	 * @param type Selects the type of descriptor to use.
-	 * @param smoothingSigma How much smoothing to apply to the image before
-	 * extracting the features. Zero disables it.
-	 * @param gridSpacing The distance between each keypoint on a dense grid.
-	 * @param patchSize The size of the descriptor. Values larger than
-	 * @a gridSpacing result in overlapping descriptors which usually have
-	 * better results when classifying images.
-	 */
-	FeatureExtractor(Type type, float smoothingSigma,
-		unsigned int gridSpacing, unsigned int patchSize);
-	
+	virtual ~FeatureExtractor() {};
 	/**
 	 * @brief Extract the features of one image.
 	 *
@@ -55,21 +32,7 @@ public:
 	 * @param img The raw image data to be processed.
 	 * @return All the features extracted for this image.
 	 */
-	ImageFeatures* extract(Image& img) const;
-	
-private:
-	Type m_type;
-	float m_smoothingSigma;
-	unsigned int m_gridSpacing;
-	unsigned int m_patchSize;
-
-	ImageFeatures* extractRootDsift(Image& img) const;
-	ImageFeatures* extractDsift(Image& img) const;
-	ImageFeatures* extractHog(Image& img) const;
-	ImageFeatures* extractLbp(Image& img) const;
-	float* stackFeatures(float* descriptors, unsigned int descriptorSize,
-		unsigned int numDescriptors, unsigned int width,
-		unsigned int height, unsigned int numStacks) const;
+	virtual ImageFeatures* extract(Image& img) const = 0;
 };
 
 #endif

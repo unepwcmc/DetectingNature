@@ -2,8 +2,13 @@
 using namespace std;
 using namespace boost::filesystem;
 
+typedef boost::function<FeatureExtractor*(const SettingsManager*)>
+	featureFactory_t;
+typedef boost::function<FeatureTransform*(const SettingsManager*)>
+	transformFactory_t;
+
 ClassificationFramework::ClassificationFramework(string datasetPath,
-		Settings &settings, bool skipCache) {
+		const SettingsManager* settings, bool skipCache) {
 		
 	m_skipCache = skipCache;
 	m_settings = settings;
@@ -14,13 +19,31 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 		nullptr : m_cacheHelper->load<DatasetManager>("dataset");
 	if(m_datasetManager == nullptr) {
 		m_datasetManager = new DatasetManager(datasetPath,
-			settings.trainImagesPerClass);
+			m_settings->get<int>("classifier.trainImagesPerClass"));
 		m_cacheHelper->save<DatasetManager>("dataset", m_datasetManager);
 	}
 	
-	m_featureExtractor = new FeatureExtractor(m_settings.featureType,
-		m_settings.smoothingSigma, m_settings.gridSpacing,
-		m_settings.patchSize);
+	// Initialize factory maps
+	map<string, featureFactory_t> featureFactories;
+	featureFactories["SIFT"] = boost::factory<SIFTFeatureExtractor*>();
+	featureFactories["HOG"] = boost::factory<HOGFeatureExtractor*>();
+	featureFactories["LBP"] = boost::factory<LBPFeatureExtractor*>();
+	
+	map<string, transformFactory_t> transformFactories;
+	transformFactories["Hellinger"] =
+		boost::factory<HellingerFeatureTransform*>();
+
+	// Create instances from the settings file using the factory maps
+	m_featureExtractor =
+		featureFactories[m_settings->get<string>("features.type")](m_settings);
+	
+	vector<string> transformList;
+	string transforms = m_settings->get<string>("features.transforms");
+	boost::split(transformList, transforms, boost::is_any_of(" |"));
+	for(unsigned int i = 0; i < transformList.size(); i++) {
+		m_featureTransforms.push_back(
+			transformFactories[transformList[i]](m_settings));
+	}
 }
 
 ClassificationFramework::~ClassificationFramework() {
@@ -31,8 +54,15 @@ ClassificationFramework::~ClassificationFramework() {
 ImageFeatures* ClassificationFramework::extractFeature(string imagePath) {
 	ImageFeatures* features = m_cacheHelper->load<ImageFeatures>(imagePath);
 	if(features == nullptr) {
-		Image img(imagePath, m_settings.colourspace);
+		// Extract features
+		Image img(imagePath,
+			(Image::Colourspace)m_settings->get<int>("image.colourspace"));
 		features = m_featureExtractor->extract(img);
+		
+		// Apply transformations
+		for(unsigned int i = 0; i < m_featureTransforms.size(); i++) {
+			features = m_featureTransforms[i]->transform(features);
+		}
 		m_cacheHelper->save<ImageFeatures>(imagePath, features);
 	}
 
@@ -43,14 +73,16 @@ Codebook* ClassificationFramework::prepareCodebook(
 		vector<string> imagePaths, bool skipCache) {
 		
 	vector<ImageFeatures*> features;
-	features.resize(m_settings.textonImages, nullptr);
+	features.resize(m_settings->get<int>("codebook.textonImages"), nullptr);
 
 	Codebook* codebook = skipCache ?
 		nullptr : m_cacheHelper->load<Codebook>("codebook");
 	if(codebook == nullptr) {
 		unsigned int currentIter = 0;
 		#pragma omp parallel for
-		for(unsigned int i = 0; i < m_settings.textonImages; i++) {
+		for(unsigned int i = 0;
+				i < m_settings->get<unsigned int>("codebook.textonImages"); i++) {
+				
 			features[i] = extractFeature(imagePaths[i]);
 		
 			#pragma omp critical
@@ -58,13 +90,15 @@ Codebook* ClassificationFramework::prepareCodebook(
 				currentIter++;
 				OutputHelper::printProgress("Processing image "
 					+ DatasetManager::getFilename(imagePaths[i]),
-					currentIter, m_settings.textonImages);
+					currentIter, m_settings->get<int>("codebook.textonImages"));
 			}
 		}
 		
 		CodebookGenerator codebookGenerator(features);
-		codebook = codebookGenerator.generate(m_settings.textonImages,
-			m_settings.codewords, m_settings.histogramType);
+		codebook = codebookGenerator.generate(
+			m_settings->get<int>("codebook.textonImages"),
+			m_settings->get<int>("codebook.codewords"),
+			(Codebook::Type)m_settings->get<int>("histogram.type"));
 		m_cacheHelper->save<Codebook>("codebook", codebook);
 	}
 	
@@ -83,7 +117,7 @@ Histogram* ClassificationFramework::generateHistogram(
 	if(histogram == nullptr) {
 		ImageFeatures* features = extractFeature(imagePath);
 		histogram = codebook->computeHistogram(features,
-			m_settings.pyramidLevels);
+			m_settings->get<int>("histogram.pyramidLevels"));
 		m_cacheHelper->save<Histogram>(imagePath, histogram);
 		delete features;
 	}
@@ -122,7 +156,8 @@ Classifier* ClassificationFramework::trainClassifier(
 	vector<string> classNames = m_datasetManager->listClasses();
 	Classifier* classifier = new Classifier(classNames);
 	classifier->train(trainHistograms,
-		m_datasetManager->getTrainClasses(), m_settings.C);
+		m_datasetManager->getTrainClasses(),
+		m_settings->get<float>("classifier.c"));
 	
 	return classifier;
 }
