@@ -10,7 +10,11 @@ Dependencies
 
 * [VLFeat](http://www.vlfeat.org/) >= 0.9.16
 
+* [Yael](https://gforge.inria.fr/projects/yael/) >= 300
+
 * [LIBSVM](http://www.csie.ntu.edu.tw/~cjlin/libsvm/) >= 3.12
+
+* [LIBLINEAR](http://www.csie.ntu.edu.tw/~cjlin/liblinear/) >= 1.8
 
 Building
 ---------------
@@ -48,6 +52,12 @@ Dataset structure
 Example datasets
 ---------------
 
-* [15 Scenes Dataset](http://www.cs.illinois.edu/homes/slazebni/research/scene_categories.zip) (91.7MB)
+* [8 Scenes Dataset](http://people.csail.mit.edu/torralba/code/spatialenvelope/spatial_envelope_256x256_static_8outdoorcategories.zip) (129MB)
+
+* [15 Scenes Dataset](http://www.cs.illinois.edu/homes/slazebni/research/scene_categories.zip) (92MB)
 	
 * [SUN Database](http://groups.csail.mit.edu/vision/SUN1old/SUN397.tar) (37GB)
+
+* [Caltech 101](http://www.vision.caltech.edu/Image_Datasets/Caltech101/) (126MB)
+
+* [Vogel and Schiele](http://www.d2.mpi-inf.mpg.de/sites/default/files/images.zip) (214MB)
