@@ -8,6 +8,8 @@ typedef boost::function<FeatureTransform*(const SettingsManager*)>
 	transformFactory_t;
 typedef boost::function<ImageLoader*(const SettingsManager*)>
 	loaderFactory_t;
+typedef boost::function<Classifier*(const SettingsManager*,
+	std::vector<std::string>)> classifierFactory_t;
 
 ClassificationFramework::ClassificationFramework(string datasetPath,
 		const SettingsManager* settings, bool skipCache) {
@@ -40,6 +42,10 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 	map<string, transformFactory_t> transformFactories;
 	transformFactories["Hellinger"] =
 		boost::factory<HellingerFeatureTransform*>();
+	
+	map<string, classifierFactory_t> classifierFactories;
+	classifierFactories["Linear"] = boost::factory<LinearClassifier*>();
+	classifierFactories["SVM"] = boost::factory<SVMClassifier*>();
 
 	// Create instances from the settings file using the factory maps
 	m_imageLoader =
@@ -52,14 +58,25 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 	string transforms = m_settings->get<string>("features.transforms");
 	boost::split(transformList, transforms, boost::is_any_of(" |"));
 	for(unsigned int i = 0; i < transformList.size(); i++) {
-		m_featureTransforms.push_back(
-			transformFactories[transformList[i]](m_settings));
+		if(transformList[i].length() > 0) {
+			m_featureTransforms.push_back(
+				transformFactories[transformList[i]](m_settings));
+		}
 	}
+	
+	vector<string> classNames = m_datasetManager->listClasses();
+	m_classifier = classifierFactories[
+		m_settings->get<string>("classifier.type")](m_settings, classNames);
 }
 
 ClassificationFramework::~ClassificationFramework() {
 	delete m_datasetManager;
 	delete m_featureExtractor;
+	delete m_classifier;
+	
+	for(unsigned int i = 0; i < m_featureTransforms.size(); i++) {
+		delete m_featureTransforms[i];
+	}
 }
 
 ImageFeatures* ClassificationFramework::extractFeature(string imagePath) {
@@ -162,28 +179,16 @@ vector<Histogram*> ClassificationFramework::generateHistograms(
 	return histograms;
 }
 
-Classifier* ClassificationFramework::trainClassifier(
-		std::vector<Histogram*> trainHistograms) {
-		
-	vector<string> classNames = m_datasetManager->listClasses();
-	Classifier* classifier = new Classifier(classNames);
-	classifier->train(trainHistograms,
-		m_datasetManager->getTrainClasses(),
-		m_settings->get<float>("classifier.c"));
-	
-	return classifier;
-}
-
 double ClassificationFramework::testRun() {
 	vector<Histogram*> trainHistograms =
 		generateHistograms(m_datasetManager->getTrainData(), m_skipCache);
 
-	Classifier* classifier = trainClassifier(trainHistograms);
+	m_classifier->train(trainHistograms, m_datasetManager->getTrainClasses());
 	
 	vector<Histogram*> testHistograms =
 		generateHistograms(m_datasetManager->getTestData(), false);
 	double result =
-		classifier->test(testHistograms, m_datasetManager->getTestClasses());
+		m_classifier->test(testHistograms, m_datasetManager->getTestClasses());
 	
 	for(unsigned int i = 0; i < trainHistograms.size(); i++)
 		delete trainHistograms[i];
@@ -197,7 +202,7 @@ map<string, string> ClassificationFramework::classify(string imagesFolder) {
 	vector<Histogram*> trainHistograms =
 		generateHistograms(m_datasetManager->getTrainData(), m_skipCache);
 
-	Classifier* classifier = trainClassifier(trainHistograms);
+	m_classifier->train(trainHistograms, m_datasetManager->getTrainClasses());
 	
 	vector<string> filePaths;
 	for(directory_iterator it(imagesFolder); it != directory_iterator(); it++) {
@@ -211,7 +216,7 @@ map<string, string> ClassificationFramework::classify(string imagesFolder) {
 	#pragma omp parallel for
 	for(unsigned int i = 0; i < testHistograms.size(); i++) {
 		pair<unsigned int, double> resultClass
-			= classifier->classify(testHistograms[i]);
+			= m_classifier->classify(testHistograms[i]);
 		results[filePaths[i]] = classNames[resultClass.first];
 	}
 	

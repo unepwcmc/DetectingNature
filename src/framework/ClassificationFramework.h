@@ -16,7 +16,8 @@
 #include "features/SIFTFeatureExtractor.h"
 #include "features/HellingerFeatureTransform.h"
 #include "codebook/CodebookGenerator.h"
-#include "classification/Classifier.h"
+#include "classification/SVMClassifier.h"
+#include "classification/LinearClassifier.h"
 #include "framework/SettingsManager.h"
 
 /**
@@ -73,9 +74,12 @@ private:
 	
 	CacheHelper* m_cacheHelper;
 	DatasetManager* m_datasetManager;
+	
 	ImageLoader* m_imageLoader;
 	FeatureExtractor* m_featureExtractor;	
 	std::vector<FeatureTransform*> m_featureTransforms;	
+	Classifier* m_classifier;
+	
 	std::vector<std::string> m_imagePaths;
 	std::string m_cachePath;
 	
@@ -83,7 +87,6 @@ private:
 		std::vector<std::string> imagePaths, bool skipCache);
 	ImageFeatures* extractFeature(std::string imagePath);
 	Histogram* generateHistogram(Codebook* codebook, std::string filePath);
-	Classifier* trainClassifier(std::vector<Histogram*> trainHistograms); 
 	
 	std::vector<ImageFeatures*> extractFeatures(
 		std::vector<std::string> imagePaths);

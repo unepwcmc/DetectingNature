@@ -3,12 +3,7 @@
 
 #include <vector>
 #include <string>
-#include <cstring>
-#include <algorithm>
 
-#include <libsvm/svm.h>
-
-#include "classification/ConfusionMatrix.h"
 #include "codebook/Histogram.h"
 
 /**
@@ -19,15 +14,7 @@
  */
 class Classifier {
 public:
-	/**
-	 * @brief Initializes the classifier with the required data.
-	 *
-	 * @param classNames A vector containing the names of all classes. Its
-	 * order will remain unchanged and will be used to print the
-	 * confusion matrix.
-	 */
-	Classifier(std::vector<std::string> classNames);
-	~Classifier();
+	virtual ~Classifier() {};
 	
 	/**
 	 * @brief Trains the classifier.
@@ -46,8 +33,8 @@ public:
 	 * closer to 0 tend to underfit the data, while larger values tend
 	 * to overfit.
 	 */
-	void train(std::vector<Histogram*> histograms,
-		std::vector<unsigned int> imageClasses, double C);
+	virtual void train(std::vector<Histogram*> histograms,
+		std::vector<unsigned int> imageClasses) = 0;
 	
 	/**
 	 * @brief Tests the classifier using new images with a known class.
@@ -66,8 +53,8 @@ public:
 	 * @return The average value of the confusion matrix diagonal. Returned as a
 	 * percentage, between 0 and 1.
 	 */
-	double test(std::vector<Histogram*> histograms,
-		std::vector<unsigned int> imageClasses);
+	virtual double test(std::vector<Histogram*> histograms,
+		std::vector<unsigned int> imageClasses) = 0;
 		
 	/**
 	 * @brief Classifies a single image.
@@ -83,20 +70,7 @@ public:
 	 * positive value means no classifier recognizes the image as belonging to
 	 * their class.
 	 */
-	std::pair<unsigned int, double> classify(Histogram* histogram);
-
-private:
-	std::vector<Histogram*> m_trainHistograms;
-	std::vector<double> m_trainClasses;
-	std::vector<std::string> m_classNames;
-
-	std::vector<svm_problem*> m_svmProbs;
-	std::vector<svm_model*> m_svmModels;
-	svm_parameter* m_svmParams;
-		
-	float* flattenHistogramData();
-	double intersectionKernel(Histogram* a, Histogram* b);
-	double* buildClassList(unsigned int desiredClass);
+	virtual std::pair<unsigned int, double> classify(Histogram* histogram) = 0;
 };
 
 #endif

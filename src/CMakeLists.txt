@@ -43,7 +43,8 @@ add_executable(DetectingNature
 	codebook/Codebook.cpp
 	codebook/CodebookGenerator.cpp
 	classification/ConfusionMatrix.cpp
-	classification/Classifier.cpp
+	classification/SVMClassifier.cpp
+	classification/LinearClassifier.cpp
 	framework/ClassificationFramework.cpp
 	main.cpp)
 
