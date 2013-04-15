@@ -9,8 +9,7 @@
 /**
  * @brief Contains the image classifier.
  *
- * Trains several Support Vector Machine using the one-vs-all technique to
- * distinguish between several image classes.
+ * Trains a classifier to distinguish between several image classes.
  */
 class Classifier {
 public:
@@ -29,9 +28,6 @@ public:
 	 * match the element in the @a histograms vector at the same position.
 	 * The class is a number that corresponds to its index in the @a classNames
 	 * vector.
-	 * @param C The C-SVM penalty value. Must be greater than 0. Values
-	 * closer to 0 tend to underfit the data, while larger values tend
-	 * to overfit.
 	 */
 	virtual void train(std::vector<Histogram*> histograms,
 		std::vector<unsigned int> imageClasses) = 0;

@@ -16,16 +16,18 @@ namespace linear {
 #include "codebook/Histogram.h"
 
 /**
- * @brief Contains the image classifier.
+ * @brief Trains a linear SVM for image classification.
  *
- * Trains several Support Vector Machine using the one-vs-all technique to
- * distinguish between several image classes.
+ * Trains several Support Vector Machine classifiers using a one-vs-all
+ * technique to distinguish between several image classes.
  */
 class LinearClassifier : public Classifier {
 public:
 	/**
 	 * @brief Initializes the classifier with the required data.
 	 *
+	 * @param settings Manager that allows any required settings
+	 * to be loaded from the configuration file.
 	 * @param classNames A vector containing the names of all classes. Its
 	 * order will remain unchanged and will be used to print the
 	 * confusion matrix.
