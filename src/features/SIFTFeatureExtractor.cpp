@@ -3,22 +3,21 @@ using namespace std;
 
 SIFTFeatureExtractor::SIFTFeatureExtractor(const SettingsManager* settings) {
 	m_smoothingSigma = settings->get<float>("image.smoothingSigma");
-	m_gridSpacing = settings->get<int>("features.gridSpacing");
-	m_patchSize = settings->get<int>("features.patchSize");
+	m_gridSpacings = settings->get<vector<int> >("features.gridSpacing");
+	m_patchSizes = settings->get<vector<int> >("features.patchSize");
 }
 
 ImageFeatures* SIFTFeatureExtractor::extract(const ImageData* img) const {
 	ImageFeatures* imageFeatures = new ImageFeatures(
 		img->getWidth(), img->getHeight(), img->getNumChannels());
 	
-	unsigned int numConcentricDesc = 8;
-	unsigned int mainBinSize = m_patchSize / 4;
-	for(unsigned int h = 0; h < numConcentricDesc; h++) {
-		unsigned int binSize = mainBinSize + 1.2 * h;
+	for(unsigned int h = 0; h < m_gridSpacings.size(); h++) {
+		unsigned int binSize = m_patchSizes[h] / 4;
+		unsigned int gridSpacing = m_gridSpacings[h];
 	
 		VlDsiftFilter* filter =
 			vl_dsift_new_basic(img->getWidth(), img->getHeight(),
-				binSize * 2, binSize);
+				gridSpacing, binSize);
 		int margin = (binSize / 2);// + (3.0 / 2.0 * (mainBinSize - binSize));
 		vl_dsift_set_bounds(filter, margin, margin,
 			img->getWidth() - margin - 1, img->getHeight() - margin - 1);

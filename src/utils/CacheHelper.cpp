@@ -27,8 +27,8 @@ string CacheHelper::getCacheFolder(string filename,
 		"_" << m_settings->get<string>("image.type") <<
 		"_" << m_settings->get<float>("image.smoothingSigma") << 
 		"_" << m_settings->get<string>("features.type") <<
-		"_" << m_settings->get<int>("features.gridSpacing") <<
-		"_" << m_settings->get<int>("features.patchSize");
+		"_" << m_settings->get<vector<int> >("features.gridSpacing")[0] <<
+		"_" << m_settings->get<vector<int> >("features.patchSize")[0];
 		
 	if(dataType == typeid(ImageFeatures)) {
 		return basePath + cacheNameStream.str() + "/";

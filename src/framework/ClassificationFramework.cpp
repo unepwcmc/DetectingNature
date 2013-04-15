@@ -54,14 +54,11 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 	m_featureExtractor =
 		featureFactories[m_settings->get<string>("features.type")](m_settings);
 	
-	vector<string> transformList;
-	string transforms = m_settings->get<string>("features.transforms");
-	boost::split(transformList, transforms, boost::is_any_of(" |"));
+	vector<string> transformList =
+		m_settings->get<vector<string> >("features.transforms");
 	for(unsigned int i = 0; i < transformList.size(); i++) {
-		if(transformList[i].length() > 0) {
-			m_featureTransforms.push_back(
-				transformFactories[transformList[i]](m_settings));
-		}
+		m_featureTransforms.push_back(
+			transformFactories[transformList[i]](m_settings));
 	}
 	
 	vector<string> classNames = m_datasetManager->listClasses();

@@ -29,8 +29,8 @@ public:
 	
 private:
 	float m_smoothingSigma;
-	unsigned int m_gridSpacing;
-	unsigned int m_patchSize;
+	std::vector<int> m_gridSpacings;
+	std::vector<int> m_patchSizes;
 };
 
 #endif

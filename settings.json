@@ -6,14 +6,14 @@
 	
 	"features": {
 		"type": "SIFT", //SIFT, HOG, LBP
-		"gridSpacing": 10,
-		"patchSize": 20,
-		"transforms": "Hellinger" //Hellinger
+		"gridSpacing": [10, 12, 15, 18, 21, 25, 30, 36],
+		"patchSize": [20, 24, 30, 36, 42, 50, 60, 72],
+		"transforms": ["Hellinger"] //Hellinger
 	},
 	
 	"codebook": {
 		"type": "Fisher", //Fisher, KMeans
-		"textonImages": 150,
+		"textonImages": 350,
 		"codewords": 50
 	},
 	
@@ -23,8 +23,8 @@
 	},
 	
 	"classifier": {
-		"type": "Linear", //LINEAR, SVM
-		"c": 1.0,
-		"trainImagesPerClass": 1000
+		"type": "Linear", //Linear, SVM
+		"c": 5.0,
+		"trainImagesPerClass": 100
 	}
 }

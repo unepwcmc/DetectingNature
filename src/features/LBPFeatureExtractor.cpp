@@ -2,8 +2,8 @@
 using namespace std;
 
 LBPFeatureExtractor::LBPFeatureExtractor(const SettingsManager* settings) {
-	m_gridSpacing = settings->get<int>("features.gridSpacing");
-	m_patchSize = settings->get<int>("features.patchSize");
+	m_gridSpacing = settings->get<vector<int> >("features.gridSpacing")[0];
+	m_patchSize = settings->get<vector<int> >("features.patchSize")[0];
 }
 
 ImageFeatures* LBPFeatureExtractor::extract(const ImageData* img) const {
