@@ -48,7 +48,7 @@ void LinearClassifier::train(vector<Histogram*> histograms,
 	OutputHelper::printMessage("Training Classifier:");
 
 	m_svmParams = new linear::parameter();
-	m_svmParams->solver_type = linear::MCSVM_CS;
+	m_svmParams->solver_type = linear::L2R_L2LOSS_SVC_DUAL;
 	m_svmParams->C = m_c;
 	m_svmParams->eps = 1e-4;
 
@@ -84,30 +84,6 @@ void LinearClassifier::train(vector<Histogram*> histograms,
 
 	m_svmModel = linear::train(m_svmProb, m_svmParams);
 	cout << endl;
-}
-
-double LinearClassifier::test(vector<Histogram*> testHistograms,
-		vector<unsigned int> testClasses) {
-			
-	OutputHelper::printMessage("Testing Classifier:");
-	ConfusionMatrix confMat(m_classNames);
-	
-	unsigned int currentIter = 0;
-	#pragma omp parallel for
-	for(unsigned int i = 0; i < testHistograms.size(); i++) {
-		pair<unsigned int, double> result = classify(testHistograms[i]);
-		
-		confMat.addEntry(testClasses[i], result.first);
-		
-		#pragma omp critical
-		{
-			currentIter++;
-			OutputHelper::printResults("Predicting image", currentIter,
-				testHistograms.size(), result.first, result.second);
-		}
-	}
-	confMat.printMatrix();
-	return confMat.getDiagonalAverage();
 }
 
 pair<unsigned int, double> LinearClassifier::classify(Histogram* histogram) {

@@ -122,30 +122,6 @@ void SVMClassifier::train(vector<Histogram*> histograms,
 	}
 }
 
-double SVMClassifier::test(vector<Histogram*> testHistograms,
-		vector<unsigned int> testClasses) {
-			
-	OutputHelper::printMessage("Testing Classifier:");
-	ConfusionMatrix confMat(m_classNames);
-	
-	unsigned int currentIter = 0;
-	#pragma omp parallel for
-	for(unsigned int i = 0; i < testHistograms.size(); i++) {
-		pair<unsigned int, double> result = classify(testHistograms[i]);
-		
-		confMat.addEntry(testClasses[i], result.first);
-		
-		#pragma omp critical
-		{
-			currentIter++;
-			OutputHelper::printResults("Predicting image", currentIter,
-				testHistograms.size(), result.first, result.second);
-		}
-	}
-	confMat.printMatrix();
-	return confMat.getDiagonalAverage();
-}
-
 pair<unsigned int, double> SVMClassifier::classify(Histogram* histogram) {
 	svm_node testNode[m_trainHistograms.size() + 1];
 	testNode[0].index = 0;

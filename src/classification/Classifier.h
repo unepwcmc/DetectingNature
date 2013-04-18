@@ -31,26 +31,6 @@ public:
 	 */
 	virtual void train(std::vector<Histogram*> histograms,
 		std::vector<unsigned int> imageClasses) = 0;
-	
-	/**
-	 * @brief Tests the classifier using new images with a known class.
-	 *
-	 * This will print a confusion matrix. Each line of the matrix contains the
-	 * percentage of images of that line's class that were classified as the
-	 * column's class.
-	 *
-	 * @pre The classifiers must be trained using the train() function before
-	 * this function can run.
-	 * @param histograms Histograms of the images to be used as testing data.
-	 * @param imageClasses Class of each image. Each element in this vector must
-	 * match the element in the @a histograms vector at the same position.
-	 * The class is a number that corresponds to its index in the @a classNames
-	 * vector.
-	 * @return The average value of the confusion matrix diagonal. Returned as a
-	 * percentage, between 0 and 1.
-	 */
-	virtual double test(std::vector<Histogram*> histograms,
-		std::vector<unsigned int> imageClasses) = 0;
 		
 	/**
 	 * @brief Classifies a single image.

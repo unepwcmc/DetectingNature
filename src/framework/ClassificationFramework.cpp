@@ -182,17 +182,41 @@ double ClassificationFramework::testRun() {
 
 	m_classifier->train(trainHistograms, m_datasetManager->getTrainClasses());
 	
-	vector<Histogram*> testHistograms =
-		generateHistograms(m_datasetManager->getTestData(), false);
-	double result =
-		m_classifier->test(testHistograms, m_datasetManager->getTestClasses());
+	vector<string> classNames = m_datasetManager->listClasses();
+	vector<string> imagePaths = m_datasetManager->getTestData();
+	vector<unsigned int> testClasses = m_datasetManager->getTestClasses();
+	Codebook* codebook = prepareCodebook(imagePaths, false);
+	
+	OutputHelper::printMessage("Testing Classifier:");
+	ConfusionMatrix confMat(classNames);
+	
+	unsigned int currentIter = 0;
+	#pragma omp parallel for
+	for(unsigned int i = 0; i < imagePaths.size(); i++) {
+		Histogram* testHist = generateHistogram(codebook, imagePaths[i]);
+		pair<unsigned int, double> result = m_classifier->classify(testHist);
+		delete testHist;
+		
+		confMat.addEntry(testClasses[i], result.first);
+			
+		#pragma omp critical
+		{
+			if(!(currentIter % 500)) {
+				ConfusionMatrix tempMat = confMat;
+				tempMat.printMatrix();
+			}
+		
+			currentIter++;
+			OutputHelper::printResults("Predicting image", currentIter,
+				imagePaths.size(), result.first, result.second);
+		}
+	}
+	confMat.printMatrix();
 	
 	for(unsigned int i = 0; i < trainHistograms.size(); i++)
 		delete trainHistograms[i];
-	for(unsigned int i = 0; i < testHistograms.size(); i++)
-		delete testHistograms[i];
 
-	return result;
+	return confMat.getDiagonalAverage();
 }
 
 map<string, string> ClassificationFramework::classify(string imagesFolder) {

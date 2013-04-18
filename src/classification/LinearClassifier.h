@@ -38,9 +38,6 @@ public:
 	
 	void train(std::vector<Histogram*> histograms,
 		std::vector<unsigned int> imageClasses);
-	
-	double test(std::vector<Histogram*> histograms,
-		std::vector<unsigned int> imageClasses);
 
 	std::pair<unsigned int, double> classify(Histogram* histogram);
 
