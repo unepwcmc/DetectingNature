@@ -19,11 +19,13 @@ include_directories(
 	${Boost_INCLUDE_DIRS}
 	../libs/vlfeat-0.9.16/
 	../libs/CImg-1.5.4/
-	../libs/yael_v300/)
+	../libs/yael_v300/
+	../libs/gmm-fisher/)
 	
 link_directories(
 	../libs/vlfeat-0.9.16/bin/glnx86/
-	../libs/yael_v300/yael/)
+	../libs/yael_v300/yael/
+	../libs/gmm-fisher/)
 
 add_executable(DetectingNature
 	utils/OutputHelper.cpp
@@ -40,8 +42,10 @@ add_executable(DetectingNature
 	features/HellingerFeatureTransform.cpp
 	utils/DatasetManager.cpp
 	codebook/Histogram.cpp
-	codebook/Codebook.cpp
-	codebook/CodebookGenerator.cpp
+	codebook/KMeansCodebook.cpp
+	codebook/FisherCodebook.cpp
+	codebook/KMeansCodebookGenerator.cpp
+	codebook/FisherCodebookGenerator.cpp
 	classification/ConfusionMatrix.cpp
 	classification/SVMClassifier.cpp
 	classification/LinearClassifier.cpp
@@ -53,6 +57,7 @@ target_link_libraries(DetectingNature
 	vl
 	linear
 	svm
-	yael)
+	yael
+	gmmfisher)
 
 install(TARGETS DetectingNature DESTINATION bin)
