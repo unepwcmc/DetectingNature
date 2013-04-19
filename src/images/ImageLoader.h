@@ -38,6 +38,8 @@ public:
 	ImageData* loadImage(std::string filename) const;
 
 private:
+	double m_maxRes;
+	
 	virtual ImageData* processImageData(
 		cimg_library::CImg<float> image) const = 0;
 };

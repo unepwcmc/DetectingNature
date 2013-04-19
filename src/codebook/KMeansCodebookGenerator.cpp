@@ -2,29 +2,12 @@
 using namespace std;
 
 KMeansCodebookGenerator::KMeansCodebookGenerator(
-		const SettingsManager* settings) {
+		const SettingsManager* settings) : CodebookGenerator(settings) {
 		
-	m_numTextonImages = settings->get<unsigned int>("codebook.textonImages");
 	m_numClusters = settings->get<unsigned int>("codebook.codewords");
 	m_levels = settings->get<unsigned int>("histogram.pyramidLevels");
 	m_type = settings->get<string>("histogram.type") == "Slices" ?
 		KMeansCodebook::SLICES : KMeansCodebook::SQUARES;
-}
-
-vector<float> KMeansCodebookGenerator::generateDescriptorSet(
-		vector<ImageFeatures*> imageFeatures) const {
-		
-	int descriptorSize = imageFeatures[0]->getDescriptorSize();
-	vector<float> descriptors;
-	
-	for(unsigned int i = 0; i < m_numTextonImages; i++) {			
-		for(unsigned int j = 0; j < imageFeatures[i]->getNumFeatures(); j++) {
-			const float* feature = imageFeatures[i]->getFeature(j);
-			copy(feature, feature + descriptorSize, back_inserter(descriptors));
-		}
-	}
-	
-	return descriptors;
 }
 
 Codebook* KMeansCodebookGenerator::generate(

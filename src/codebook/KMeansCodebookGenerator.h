@@ -35,13 +35,9 @@ public:
 	Codebook* generate(std::vector<ImageFeatures*> imageFeatures) const;
 	
 private:
-	unsigned int m_numTextonImages;
 	unsigned int m_numClusters;
 	unsigned int m_levels;
 	KMeansCodebook::Type m_type;
-	
-	std::vector<float> generateDescriptorSet(
-		std::vector<ImageFeatures*> imageFeatures) const;
 };
 
 #endif

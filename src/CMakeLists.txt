@@ -44,6 +44,7 @@ add_executable(DetectingNature
 	codebook/Histogram.cpp
 	codebook/KMeansCodebook.cpp
 	codebook/FisherCodebook.cpp
+	codebook/CodebookGenerator.cpp
 	codebook/KMeansCodebookGenerator.cpp
 	codebook/FisherCodebookGenerator.cpp
 	classification/ConfusionMatrix.cpp

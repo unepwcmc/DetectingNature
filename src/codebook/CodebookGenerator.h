@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "framework/SettingsManager.h"
 #include "features/ImageFeatures.h"
 #include "codebook/Codebook.h"
 
@@ -14,6 +15,8 @@
  */
 class CodebookGenerator {
 public:
+	CodebookGenerator(const SettingsManager* settings);
+
 	/**
 	 * @brief Generates a codebook using the set of image features defined in
 	 * constructor.
@@ -31,6 +34,13 @@ public:
 	 */
 	virtual Codebook* generate(
 		std::vector<ImageFeatures*> imageFeatures) const = 0;
+
+protected:
+	unsigned int m_numTextonImages;
+	unsigned int m_numFeatures;
+	
+	std::vector<float> generateDescriptorSet(
+		std::vector<ImageFeatures*> imageFeatures) const;
 };
 
 #endif

@@ -66,6 +66,8 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
+		ar & boost::serialization::base_object<Codebook>(*this);
+		
 		ar & m_type;
 		ar & m_numClusters;
 		ar & m_centers;

@@ -42,9 +42,6 @@ public:
 	
 private:
 	unsigned int m_numClusters;
-	unsigned int m_numTextonImages;
-	std::vector<float> generateDescriptorSet(
-		std::vector<ImageFeatures*> imageFeatures) const;
 };
 
 #endif

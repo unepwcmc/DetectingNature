@@ -2,35 +2,9 @@
 using namespace std;
 
 FisherCodebookGenerator::FisherCodebookGenerator(
-		const SettingsManager* settings) {
+		const SettingsManager* settings) : CodebookGenerator(settings) {
 	
-	m_numTextonImages = settings->get<unsigned int>("codebook.textonImages");
 	m_numClusters = settings->get<unsigned int>("codebook.codewords");
-}
-
-vector<float> FisherCodebookGenerator::generateDescriptorSet(
-		vector<ImageFeatures*> imageFeatures) const {
-		
-	int descriptorSize = imageFeatures[0]->getDescriptorSize();
-	vector<float> descriptors;
-	
-	unsigned int numDescriptors = 0;
-	for(unsigned int i = 0; i < m_numTextonImages; i++) {
-		numDescriptors += imageFeatures[i]->getNumFeatures();
-	}
-	
-	double odds = 500000.0 / numDescriptors;
-	for(unsigned int i = 0; i < m_numTextonImages; i++) {
-		for(unsigned int j = 0; j < imageFeatures[i]->getNumFeatures(); j++) {
-			if(((double)rand()/(double)RAND_MAX) < odds) {
-				const float* feature = imageFeatures[i]->getFeature(j);
-				copy(feature, feature + descriptorSize,
-					back_inserter(descriptors));
-			}
-		}
-	}
-	
-	return descriptors;
 }
 
 Codebook* FisherCodebookGenerator::generate(
