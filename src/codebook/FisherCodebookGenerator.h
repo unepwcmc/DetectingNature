@@ -41,6 +41,7 @@ public:
 	Codebook* generate(std::vector<ImageFeatures*> imageFeatures) const;
 	
 private:
+	unsigned int m_pcaDim;
 	unsigned int m_numClusters;
 };
 

@@ -5,6 +5,7 @@ FisherCodebookGenerator::FisherCodebookGenerator(
 		const SettingsManager* settings) : CodebookGenerator(settings) {
 	
 	m_numClusters = settings->get<unsigned int>("codebook.codewords");
+	m_pcaDim = settings->get<unsigned int>("codebook.pcaDimension");
 }
 
 Codebook* FisherCodebookGenerator::generate(
@@ -15,37 +16,36 @@ Codebook* FisherCodebookGenerator::generate(
 	unsigned int numFeatures = descriptors.size() / descriptorSize;
 	
 	// Perform PCA
-	unsigned int newDim = 80;
 	pca_online_t* pca = pca_online_new(descriptorSize);
 	pca_online_accu(pca, &descriptors[0], numFeatures);
 	pca_online_complete(pca);
 	
-	vector<float> pcaFeatures(numFeatures * newDim, 0.0);
+	vector<float> pcaFeatures(numFeatures * m_pcaDim, 0.0);
 	pca_online_project(pca, &descriptors[0], &pcaFeatures[0],
-		descriptorSize, numFeatures, newDim);
+		descriptorSize, numFeatures, m_pcaDim);
 	descriptors.clear();
 
 	// Spend some precious CPU cycles converting data into
 	// the format expected by gmm-fisher
 	vector<float*> samples(numFeatures, nullptr);
 	for(unsigned int i = 0; i < numFeatures; i++) {
-		samples[i] = new float[newDim];
-		for(unsigned int j = 0; j < newDim; j++) {
-			samples[i][j] = pcaFeatures[i * newDim + j];
+		samples[i] = new float[m_pcaDim];
+		for(unsigned int j = 0; j < m_pcaDim; j++) {
+			samples[i][j] = pcaFeatures[i * m_pcaDim + j];
 		}
 	}
 	
 	// Use k-means to initialize GMM
 	float* distances = new float[numFeatures];
-	float* centroids = new float[numFeatures * newDim];
-	kmeans(newDim, numFeatures, m_numClusters, 1000, &pcaFeatures[0],
+	float* centroids = new float[numFeatures * m_pcaDim];
+	kmeans(m_pcaDim, numFeatures, m_numClusters, 1000, &pcaFeatures[0],
 		4, -1, 1, centroids, distances, nullptr, nullptr);
 	
 	vector<float*> mean(m_numClusters, nullptr);
 	for(unsigned int i = 0; i < m_numClusters; i++) {
-		mean[i] = new float[newDim];
-		for(unsigned int j = 0; j < newDim; j++) {
-			mean[i][j] = centroids[i * newDim + j];
+		mean[i] = new float[m_pcaDim];
+		for(unsigned int j = 0; j < m_pcaDim; j++) {
+			mean[i][j] = centroids[i * m_pcaDim + j];
 		}
 	}
 	delete[] centroids;
@@ -54,8 +54,8 @@ Codebook* FisherCodebookGenerator::generate(
 	float sigma = fvec_sum(distances, numFeatures) / numFeatures;
 	delete[] distances;
 	for(unsigned int i = 0; i < m_numClusters; i++) {
-		var[i] = new float[newDim];
-		for(unsigned int j = 0; j < newDim; j++) {
+		var[i] = new float[m_pcaDim];
+		for(unsigned int j = 0; j < m_pcaDim; j++) {
 			var[i][j] = sigma;
 		}
 	}
@@ -66,7 +66,7 @@ Codebook* FisherCodebookGenerator::generate(
 	
 	// Calculate Gaussian Mixture Model
 	gaussian_mixture<float>* gmm =
-		new gaussian_mixture<float>(m_numClusters, newDim);
+		new gaussian_mixture<float>(m_numClusters, m_pcaDim);
 	//gmm->random_init(samples);
 	gmm->set(mean, var, coef);
 	for(unsigned int i = 0; i < m_numClusters; i++) {
@@ -79,5 +79,5 @@ Codebook* FisherCodebookGenerator::generate(
 		delete[] samples[i];
 	}
 	
-	return new FisherCodebook(gmm, pca);
+	return new FisherCodebook(gmm, pca, m_pcaDim);
 }

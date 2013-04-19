@@ -14,9 +14,10 @@
 	
 	"codebook": {
 		"type": "Fisher", //Fisher, KMeans
+		"codewords": 50,
+		"pcaDimension": 80,
 		"textonImages": 1500,
 		"totalFeatures": 500000,
-		"codewords": 50
 	},
 	
 	"histogram": {

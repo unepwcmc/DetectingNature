@@ -39,12 +39,14 @@ public:
 	 * @param pca Principal Component Analysis matrix used to reduce
 	 * feature dimensionality.
 	 */
-	FisherCodebook(gaussian_mixture<float>* gmm, pca_online_t* pca);
+	FisherCodebook(gaussian_mixture<float>* gmm,
+		pca_online_t* pca, unsigned int pcaDim);
 	~FisherCodebook();
 	
 	Histogram* encode(ImageFeatures* imageFeatures);
 	
 private:
+	unsigned int m_pcaDim;
 	fisher<float>* m_codebook;
 	gaussian_mixture<float>* m_gmm;
 	pca_online_t* m_pca;
