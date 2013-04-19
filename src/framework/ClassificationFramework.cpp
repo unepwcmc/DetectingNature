@@ -2,12 +2,17 @@
 using namespace std;
 using namespace boost::filesystem;
 
+BOOST_CLASS_EXPORT(FisherCodebook);
+BOOST_CLASS_EXPORT(KMeansCodebook);
+
 typedef boost::function<FeatureExtractor*(const SettingsManager*)>
 	featureFactory_t;
 typedef boost::function<FeatureTransform*(const SettingsManager*)>
 	transformFactory_t;
 typedef boost::function<ImageLoader*(const SettingsManager*)>
 	loaderFactory_t;
+typedef boost::function<CodebookGenerator*(const SettingsManager*)>
+	codebookFactory_t;
 typedef boost::function<Classifier*(const SettingsManager*,
 	std::vector<std::string>)> classifierFactory_t;
 
@@ -43,6 +48,12 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 	transformFactories["Hellinger"] =
 		boost::factory<HellingerFeatureTransform*>();
 	
+	map<string, codebookFactory_t> codebookFactories;
+	codebookFactories["Fisher"] =
+		boost::factory<FisherCodebookGenerator*>();
+	codebookFactories["KMeans"] =
+		boost::factory<KMeansCodebookGenerator*>();
+	
 	map<string, classifierFactory_t> classifierFactories;
 	classifierFactories["Linear"] = boost::factory<LinearClassifier*>();
 	classifierFactories["SVM"] = boost::factory<SVMClassifier*>();
@@ -60,6 +71,9 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 		m_featureTransforms.push_back(
 			transformFactories[transformList[i]](m_settings));
 	}
+	
+	m_codebookGenerator =
+		codebookFactories[m_settings->get<string>("codebook.type")](m_settings);
 	
 	vector<string> classNames = m_datasetManager->listClasses();
 	m_classifier = classifierFactories[
@@ -96,18 +110,18 @@ ImageFeatures* ClassificationFramework::extractFeature(string imagePath) {
 
 Codebook* ClassificationFramework::prepareCodebook(
 		vector<string> imagePaths, bool skipCache) {
-		
-	vector<ImageFeatures*> features;
-	features.resize(m_settings->get<int>("codebook.textonImages"), nullptr);
 
 	Codebook* codebook = skipCache ?
 		nullptr : m_cacheHelper->load<Codebook>("codebook");
 	if(codebook == nullptr) {
+		unsigned int numTextonImages =
+			m_settings->get<unsigned int>("codebook.textonImages");
+		vector<ImageFeatures*> features;
+		features.resize(numTextonImages, nullptr);
+	
 		unsigned int currentIter = 0;
 		#pragma omp parallel for
-		for(unsigned int i = 0;
-				i < m_settings->get<unsigned int>("codebook.textonImages"); i++) {
-				
+		for(unsigned int i = 0; i < numTextonImages; i++) {
 			features[i] = extractFeature(imagePaths[i]);
 		
 			#pragma omp critical
@@ -115,21 +129,16 @@ Codebook* ClassificationFramework::prepareCodebook(
 				currentIter++;
 				OutputHelper::printProgress("Processing image "
 					+ DatasetManager::getFilename(imagePaths[i]),
-					currentIter, m_settings->get<int>("codebook.textonImages"));
+					currentIter, numTextonImages);
 			}
 		}
 		
-		CodebookGenerator codebookGenerator(features);
-		codebook = codebookGenerator.generate(
-			m_settings->get<int>("codebook.textonImages"),
-			m_settings->get<int>("codebook.codewords"),
-			(Codebook::Type)0);
-			//m_settings->get<string>("histogram.type"));
+		codebook = m_codebookGenerator->generate(features);
 		m_cacheHelper->save<Codebook>("codebook", codebook);
-	}
-	
-	for(unsigned int i = 0; i < features.size(); i++) {
-		delete features[i];
+		
+		for(unsigned int i = 0; i < features.size(); i++) {
+			delete features[i];
+		}
 	}
 	
 	return codebook;
@@ -142,8 +151,7 @@ Histogram* ClassificationFramework::generateHistogram(
 		nullptr : m_cacheHelper->load<Histogram>(imagePath);
 	if(histogram == nullptr) {
 		ImageFeatures* features = extractFeature(imagePath);
-		histogram = codebook->computeHistogram(features,
-			m_settings->get<int>("histogram.pyramidLevels"));
+		histogram = codebook->encode(features); // m_settings->get<int>("histogram.pyramidLevels")
 		m_cacheHelper->save<Histogram>(imagePath, histogram);
 		delete features;
 	}
@@ -190,23 +198,31 @@ double ClassificationFramework::testRun() {
 	OutputHelper::printMessage("Testing Classifier:");
 	ConfusionMatrix confMat(classNames);
 	
+	double avgTime = 0.0;
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
 	for(unsigned int i = 0; i < imagePaths.size(); i++) {
+		clock_t start = clock();
 		Histogram* testHist = generateHistogram(codebook, imagePaths[i]);
 		pair<unsigned int, double> result = m_classifier->classify(testHist);
 		delete testHist;
+		avgTime += (clock() - start) / (double) CLOCKS_PER_SEC;
 		
 		confMat.addEntry(testClasses[i], result.first);
 			
 		#pragma omp critical
 		{
-			if(!(currentIter % 500)) {
-				ConfusionMatrix tempMat = confMat;
-				tempMat.printMatrix();
-			}
-		
 			currentIter++;
+						
+			if(!(currentIter % 100)) {
+				ConfusionMatrix tempMat = confMat;
+				cout << endl;
+				tempMat.printMatrix();
+				cout << "    Taking " <<
+					((avgTime / 100.0) * 1000.0) << "ms per image" << endl;
+				avgTime = 0.0;
+			}
+
 			OutputHelper::printResults("Predicting image", currentIter,
 				imagePaths.size(), result.first, result.second);
 		}

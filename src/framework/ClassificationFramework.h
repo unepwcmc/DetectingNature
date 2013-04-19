@@ -15,7 +15,8 @@
 #include "features/HOGFeatureExtractor.h"
 #include "features/SIFTFeatureExtractor.h"
 #include "features/HellingerFeatureTransform.h"
-#include "codebook/CodebookGenerator.h"
+#include "codebook/KMeansCodebookGenerator.h"
+#include "codebook/FisherCodebookGenerator.h"
 #include "classification/SVMClassifier.h"
 #include "classification/LinearClassifier.h"
 #include "framework/SettingsManager.h"
@@ -77,7 +78,8 @@ private:
 	
 	ImageLoader* m_imageLoader;
 	FeatureExtractor* m_featureExtractor;	
-	std::vector<FeatureTransform*> m_featureTransforms;	
+	std::vector<FeatureTransform*> m_featureTransforms;
+	CodebookGenerator* m_codebookGenerator;
 	Classifier* m_classifier;
 	
 	std::vector<std::string> m_imagePaths;

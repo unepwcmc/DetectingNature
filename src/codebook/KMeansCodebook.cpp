@@ -1,15 +1,17 @@
-#include "Codebook.h"
+#include "KMeansCodebook.h"
 using namespace std;
 
-Codebook::Codebook() {
+KMeansCodebook::KMeansCodebook() {
 	m_kmeans = nullptr;
 	m_numClusters = 0;
 }
 
-Codebook::Codebook(const float* clusterCenters, unsigned int numClusters,
-		unsigned int dataSize, Type type) {
+KMeansCodebook::KMeansCodebook(const float* clusterCenters,
+		unsigned int numClusters, unsigned int dataSize,
+		Type type, unsigned int levels) {
 	
 	m_type = type;
+	m_levels = levels;
 	m_kmeans = nullptr;
 	unsigned int totalSize = numClusters * dataSize;
 	m_centers.reserve(totalSize);
@@ -17,13 +19,13 @@ Codebook::Codebook(const float* clusterCenters, unsigned int numClusters,
 	m_numClusters = numClusters;
 }
 
-Codebook::~Codebook() {
+KMeansCodebook::~KMeansCodebook() {
 	if(m_kmeans != nullptr) {
 		vl_kmeans_delete(m_kmeans);
 	}
 }
 
-unsigned int Codebook::histogramIndex(unsigned int level,
+unsigned int KMeansCodebook::histogramIndex(unsigned int level,
 	unsigned int cellX, unsigned int cellY, unsigned int index) const {
 	
 	unsigned int numDivisions = (m_type == SQUARES) ?
@@ -37,8 +39,7 @@ unsigned int Codebook::histogramIndex(unsigned int level,
 	return levelIndex + cellIndex + index;
 }
 
-Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
-		unsigned int levels) {
+Histogram* KMeansCodebook::encode(ImageFeatures* imageFeatures) {
 	
 	if(m_kmeans == nullptr) {
 		m_kmeans = vl_kmeans_new(VL_TYPE_FLOAT, VlDistanceL2);
@@ -48,8 +49,8 @@ Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 	}
 	
 	unsigned int totalLength = (m_type == SQUARES) ?
-		m_numClusters * (pow(4, levels + 1) - 1) / 3 :
-		m_numClusters * 4 * (pow(2, levels + 1) - 1);
+		m_numClusters * (pow(4, m_levels + 1) - 1) / 3 :
+		m_numClusters * 4 * (pow(2, m_levels + 1) - 1);
 		
 	vector<double> histogram(totalLength, 0);
 	
@@ -63,8 +64,8 @@ Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 		pair<int, int> position = imageFeatures->getCoordinates(i);
 		
 		int numDivisions = (m_type == SQUARES) ?
-			pow(2, levels) :
-			pow(2, levels+1);
+			pow(2, m_levels) :
+			pow(2, m_levels+1);
 		
 		unsigned int currentCellX = position.first /
 			(float)imageFeatures->getWidth() * numDivisions;
@@ -73,17 +74,17 @@ Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 
 		if(m_type == SQUARES) {
 			histogram[histogramIndex(
-				levels, currentCellX, currentCellY, assignments[i])]++;
+				m_levels, currentCellX, currentCellY, assignments[i])]++;
 		} else {
 			histogram[histogramIndex(
-				levels, 0, currentCellX, assignments[i])]++;
+				m_levels, 0, currentCellX, assignments[i])]++;
 			histogram[histogramIndex(
-				levels, 1, currentCellY, assignments[i])]++;
+				m_levels, 1, currentCellY, assignments[i])]++;
 		}
 	}
 	delete[] assignments;
 	
-	for(int l = levels; l >= 0; l--) {
+	for(int l = m_levels; l >= 0; l--) {
 		unsigned int numDivisionsX = (m_type == SQUARES) ?
 			pow(2, l) : 2;
 		unsigned int numDivisionsY = (m_type == SQUARES) ?
@@ -92,7 +93,7 @@ Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 		for(unsigned int i = 0; i < numDivisionsX; i++) {
 			for(unsigned int j = 0; j < numDivisionsY; j++) {
 				for(unsigned int k = 0; k < m_numClusters; k++) {
-					if((unsigned int)l == levels) {
+					if((unsigned int)l == m_levels) {
 						histogram[histogramIndex(l, i, j, k)] /= numFeatures;
 					} else {
 						if(m_type == SQUARES) {
@@ -112,12 +113,12 @@ Histogram* Codebook::computeHistogram(ImageFeatures* imageFeatures,
 		}
 	}
 
-	for(int l = levels; l >= 0; l--) {
+	for(int l = m_levels; l >= 0; l--) {
 		int lvl = (m_type == SQUARES) ?
-			l : levels - l;
+			l : m_levels - l;
 		double levelWeight = (lvl == 0) ?
-			1.0 / pow(2, levels) :
-			1.0 / pow(2, levels - lvl + 1);
+			1.0 / pow(2, m_levels) :
+			1.0 / pow(2, m_levels - lvl + 1);
 		
 		unsigned int numDivisionsX = (m_type == SQUARES) ?
 			pow(2, l) : 2;

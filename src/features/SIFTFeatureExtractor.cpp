@@ -12,17 +12,14 @@ ImageFeatures* SIFTFeatureExtractor::extract(const ImageData* img) const {
 		img->getWidth(), img->getHeight(), img->getNumChannels());
 	
 	for(unsigned int h = 0; h < m_gridSpacings.size(); h++) {
-		unsigned int binSize = m_patchSizes[h] / 4;
+		unsigned int binSize = m_patchSizes[h] / 4.0;
 		unsigned int gridSpacing = m_gridSpacings[h];
 	
 		VlDsiftFilter* filter =
 			vl_dsift_new_basic(img->getWidth(), img->getHeight(),
 				gridSpacing, binSize);
-		int margin = (binSize / 2);// + (3.0 / 2.0 * (mainBinSize - binSize));
-		vl_dsift_set_bounds(filter, margin, margin,
-			img->getWidth() - margin - 1, img->getHeight() - margin - 1);
 		vl_dsift_set_flat_window(filter, true);
-	
+			
 		for(unsigned int i = 0; i < img->getNumChannels(); i++) {
 			if(m_smoothingSigma > 0.0) {
 				float smoothedData[img->getHeight() * img->getWidth()];
