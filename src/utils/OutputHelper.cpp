@@ -91,7 +91,8 @@ void OutputHelper::printConfusionMatrix(const vector<string>& classes,
 		cout << indent(2) << setw(largestClassName) << classes[i];
 		for(unsigned int j = 0; j < classes.size(); j++) {
 			float percentage = confusionMatrix[i][j] * 100.0;
-			cout << " " << setiosflags(ios::fixed) << setprecision(1) << setw(4) << percentage;
+			cout << " " << setiosflags(ios::fixed) <<
+				setprecision(1) << setw(4) << percentage;
 			
 			if(i == j) {
 				diagonalTotal += percentage;

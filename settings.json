@@ -26,7 +26,7 @@
 	
 	"classifier": {
 		"type": "Linear", //Linear, SVM
-		"c": 1.7,
+		"c": 10.0,
 		"trainImagesPerClass": 100
 	}
 }

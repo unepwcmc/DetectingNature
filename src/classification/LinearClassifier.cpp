@@ -29,7 +29,6 @@ void LinearClassifier::clearData() {
 		}
 		delete[] m_svmProb->x;
 		
-		//delete[] m_svmProb->y;
 		delete m_svmProb;
 		m_svmProb = nullptr;
 	}
@@ -48,7 +47,7 @@ void LinearClassifier::train(vector<Histogram*> histograms,
 	OutputHelper::printMessage("Training Classifier:");
 
 	m_svmParams = new linear::parameter();
-	m_svmParams->solver_type = linear::L2R_L2LOSS_SVC_DUAL;
+	m_svmParams->solver_type = linear::L2R_LR;
 	m_svmParams->C = m_c;
 	m_svmParams->eps = 1e-4;
 
@@ -81,7 +80,7 @@ void LinearClassifier::train(vector<Histogram*> histograms,
 	m_svmProb->y = &newClasses[0];
 	m_svmProb->x = kernel;
 	m_svmProb->bias = 0;
-
+	
 	m_svmModel = linear::train(m_svmProb, m_svmParams);
 	cout << endl;
 }
@@ -97,7 +96,10 @@ pair<unsigned int, double> LinearClassifier::classify(Histogram* histogram) {
 	}
 	testNode[histLength].index = -1;
 	
-	unsigned int predictedClass = linear::predict(m_svmModel, testNode);
+	vector<double> probabilities(m_classNames.size(), 0.0);
+	unsigned int predictedClass =
+		linear::predict_probability(m_svmModel, testNode, &probabilities[0]);
 	
-	return make_pair(predictedClass, 0.0);
+	return make_pair(predictedClass,
+		*max_element(probabilities.begin(), probabilities.end()));
 }
