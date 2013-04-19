@@ -11,3 +11,19 @@
 *.lai
 *.la
 *.a
+
+# Packages
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Directories
+build/
+cache/
+docs/
+data/
