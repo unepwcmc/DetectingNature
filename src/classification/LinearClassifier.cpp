@@ -19,7 +19,7 @@ LinearClassifier::~LinearClassifier() {
 
 void LinearClassifier::clearData() {
 	if(m_svmModel != nullptr) {
-		delete m_svmModel;
+		linear::free_and_destroy_model(&m_svmModel);
 		m_svmModel = nullptr;
 	}
 	

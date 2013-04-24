@@ -151,7 +151,7 @@ Histogram* ClassificationFramework::generateHistogram(
 		nullptr : m_cacheHelper->load<Histogram>(imagePath);
 	if(histogram == nullptr) {
 		ImageFeatures* features = extractFeature(imagePath);
-		histogram = codebook->encode(features); // m_settings->get<int>("histogram.pyramidLevels")
+		histogram = codebook->encode(features);
 		m_cacheHelper->save<Histogram>(imagePath, histogram);
 		delete features;
 	}

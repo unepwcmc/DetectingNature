@@ -77,9 +77,8 @@ private:
 		
 		m_gmm = new gaussian_mixture<float>("fishercodebook");
 
-		int d;
-		ar >> d;
-		m_pca = pca_online_new(d);
+		ar >> m_pcaDim;
+		m_pca = pca_online_new(m_pcaDim);
 		for(int i = 0; i < m_pca->d; i++) {
 			ar >> m_pca->mu[i];
 		}

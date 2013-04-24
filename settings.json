@@ -17,7 +17,7 @@
 		"codewords": 50,
 		"pcaDimension": 80,
 		"textonImages": 1500,
-		"totalFeatures": 500000,
+		"totalFeatures": 500000
 	},
 	
 	"histogram": {

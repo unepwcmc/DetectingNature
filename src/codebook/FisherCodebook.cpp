@@ -24,7 +24,7 @@ FisherCodebook::~FisherCodebook() {
 }
 
 Histogram* FisherCodebook::encode(ImageFeatures* imageFeatures) {
-	
+	#pragma omp critical
 	if(m_codebook == nullptr) {
 		fisher_param params;
 		params.grad_weights = true;

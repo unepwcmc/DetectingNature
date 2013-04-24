@@ -189,6 +189,15 @@ fisher<T>::compute( std::vector<T*> &x, std::vector<T> &wghx, T *fk )
   
   alpha_and_lp_normalization(fk);
   
+  for( int k=ngauss; k--; )
+  {
+    delete[] s1[k];
+    delete[] s2[k];
+  }
+  delete[] s0;
+  delete[] s1;
+  delete[] s2;
+  
   return 0;
 }
 
