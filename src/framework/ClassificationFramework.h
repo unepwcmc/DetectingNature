@@ -2,6 +2,7 @@
 #define CLASSIFICATION_FRAMEWORK_H
 
 #include <fstream>
+#include <vector>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/functional/factory.hpp>
@@ -30,6 +31,12 @@
  */
 class ClassificationFramework {
 public:
+	struct Result {
+		std::string filepath;
+		std::string category;
+		double certainty;
+	};
+
 	/**
 	 * @brief Initializes all the classification parameters
 	 * 
@@ -67,7 +74,7 @@ public:
 	 * we want to determine their class.
 	 * @return A map relating the file path and the name of its predicted class.
 	 */
-	std::map<std::string, std::string> classify(std::string imagesFolder);
+	std::vector<Result> classify(std::string imagesFolder);
 
 private:
 	bool m_skipCache;

@@ -235,32 +235,46 @@ double ClassificationFramework::testRun() {
 	return confMat.getDiagonalAverage();
 }
 
-map<string, string> ClassificationFramework::classify(string imagesFolder) {
+vector<ClassificationFramework::Result> ClassificationFramework::classify(
+		string imagesFolder) {
+		
 	vector<Histogram*> trainHistograms =
 		generateHistograms(m_datasetManager->getTrainData(), m_skipCache);
 
 	m_classifier->train(trainHistograms, m_datasetManager->getTrainClasses());
 	
-	vector<string> filePaths;
+	vector<string> imagePaths;
 	for(directory_iterator it(imagesFolder); it != directory_iterator(); it++) {
-		filePaths.push_back(it->path().relative_path().string());
+		imagePaths.push_back(it->path().relative_path().string());
 	}
 	
-	vector<Histogram*> testHistograms = generateHistograms(filePaths, false);
+	Codebook* codebook = prepareCodebook(imagePaths, false);
 	
 	vector<string> classNames = m_datasetManager->listClasses();
-	map<string, string> results;
+	vector<Result> results;
+	unsigned int currentIter = 0;
 	#pragma omp parallel for
-	for(unsigned int i = 0; i < testHistograms.size(); i++) {
+	for(unsigned int i = 0; i < imagePaths.size(); i++) {
+		Histogram* testHist = generateHistogram(codebook, imagePaths[i]);
 		pair<unsigned int, double> resultClass
-			= m_classifier->classify(testHistograms[i]);
-		results[filePaths[i]] = classNames[resultClass.first];
+			= m_classifier->classify(testHist);
+		Result result;
+		result.filepath = imagePaths[i];
+		result.category = classNames[resultClass.first];
+		result.certainty = resultClass.second;
+		delete testHist;
+		
+		#pragma omp critical
+		{
+			results.push_back(result);
+			currentIter++;
+			OutputHelper::printResults("Classifying image", currentIter,
+				imagePaths.size(), resultClass.first, resultClass.second);
+		}
 	}
 	
 	for(unsigned int i = 0; i < trainHistograms.size(); i++)
 		delete trainHistograms[i];
-	for(unsigned int i = 0; i < testHistograms.size(); i++)
-		delete testHistograms[i];
 
 	return results;
 }

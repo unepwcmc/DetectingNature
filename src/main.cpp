@@ -47,12 +47,14 @@ int main(int argc, char** argv) {
 	//  - classify known pictures to get accuracy statistics
 	if(vm.count("classify")) {
 		ClassificationFramework cf(datasetPath, &settings, numRuns != 1);
-		map<string, string> results = cf.classify(vm["classify"].as<string>());
+		vector<ClassificationFramework::Result> results =
+			cf.classify(vm["classify"].as<string>());
 		
 		// Print the predicted class for each image
-		map<string, string>::iterator it;
+		vector<ClassificationFramework::Result>::iterator it;
 		for(it = results.begin(); it != results.end(); it++) {
-			cout << it->first << " = " << it->second << endl;
+			cout << it->filepath << " = " << it->category
+				<< " (" << it->certainty << ")" << endl;
 		}
 		
 	} else {
