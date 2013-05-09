@@ -38,7 +38,7 @@ Histogram* FisherCodebook::encode(ImageFeatures* imageFeatures) {
 
 	vector<float> pcaFeatures(numFeatures * m_pcaDim, 0.0);
 	pca_online_project(m_pca, imageFeatures->getFeatures(), &pcaFeatures[0],
-		128, numFeatures, m_pcaDim);
+		imageFeatures->getDescriptorSize(), numFeatures, m_pcaDim);
 
 	vector<float*> samples(numFeatures, nullptr);
 	for(unsigned int i = 0; i < numFeatures; i++) {
