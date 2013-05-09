@@ -22,9 +22,10 @@ ImageFeatures::ImageFeatures(unsigned int width, unsigned int height,
 void ImageFeatures::extendFeatures(unsigned int channel, float const* features,
 		unsigned int numFeatures) {
 	
-	unsigned int baseIndex = m_features.size();
-	for(unsigned int i = 0; i < m_descriptorSize * numFeatures; i++) {
-		m_features[((baseIndex + i) * m_numChannels) + channel] = features[i];
+	for(unsigned int i = 0;
+			i < (m_descriptorSize / m_numChannels) * numFeatures; i++) {
+			
+		m_features[m_baseIndex + (i * m_numChannels) + channel] = features[i];
 	}
 }
 
@@ -38,9 +39,9 @@ void ImageFeatures::newFeatures(float const* features,
 	m_coordinates.insert(m_coordinates.end(),
 		coordinates.begin(), coordinates.end());
 	
-	unsigned int baseIndex = m_features.size();
+	m_baseIndex = m_features.size();
 	m_features.resize(m_descriptorSize * m_numFeatures);
 	for(unsigned int i = 0; i < descriptorSize * numFeatures; i++) {
-		m_features[((baseIndex + i) * m_numChannels)] = features[i];
+		m_features[m_baseIndex + (i * m_numChannels)] = features[i];
 	}
 }

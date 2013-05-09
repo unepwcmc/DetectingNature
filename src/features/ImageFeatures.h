@@ -158,6 +158,7 @@ public:
 	}
 	
 private:
+	unsigned int m_baseIndex;
 	unsigned int m_numChannels;
 	unsigned int m_descriptorSize;
 	unsigned int m_numFeatures;

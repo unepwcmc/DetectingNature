@@ -10,7 +10,7 @@ SIFTFeatureExtractor::SIFTFeatureExtractor(const SettingsManager* settings) {
 ImageFeatures* SIFTFeatureExtractor::extract(const ImageData* img) const {
 	ImageFeatures* imageFeatures = new ImageFeatures(
 		img->getWidth(), img->getHeight(), img->getNumChannels());
-	
+	#pragma omp critical
 	for(unsigned int h = 0; h < m_gridSpacings.size(); h++) {
 		unsigned int binSize = m_patchSizes[h] / 4.0;
 		unsigned int gridSpacing = m_gridSpacings[h];
@@ -35,14 +35,14 @@ ImageFeatures* SIFTFeatureExtractor::extract(const ImageData* img) const {
 			unsigned int numDescriptors = vl_dsift_get_keypoint_num(filter);
 			float const* descriptors = vl_dsift_get_descriptors(filter);
 
-			vector<pair<int, int> > coordinates;
-			const VlDsiftKeypoint* keypoints = vl_dsift_get_keypoints(filter);
-			for(unsigned int j = 0; j < numDescriptors; j++) {
-				coordinates.push_back(
-					make_pair(keypoints[j].x, keypoints[j].y));
-			}
-
 			if(i == 0) {
+				vector<pair<int, int> > coordinates;
+				const VlDsiftKeypoint* keypoints = vl_dsift_get_keypoints(filter);
+				for(unsigned int j = 0; j < numDescriptors; j++) {
+					coordinates.push_back(
+						make_pair(keypoints[j].x, keypoints[j].y));
+				}
+			
 				imageFeatures->newFeatures(descriptors, descriptorSize,
 					numDescriptors, coordinates);
 			} else {
