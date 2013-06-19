@@ -116,6 +116,7 @@ Codebook* ClassificationFramework::prepareCodebook(
 	if(codebook == nullptr) {
 		unsigned int numTextonImages =
 			m_settings->get<unsigned int>("codebook.textonImages");
+		numTextonImages = min(imagePaths.size(), numTextonImages);
 		vector<ImageFeatures*> features;
 		features.resize(numTextonImages, nullptr);
 	

@@ -36,7 +36,6 @@ public:
 		std::vector<ImageFeatures*> imageFeatures) const = 0;
 
 protected:
-	unsigned int m_numTextonImages;
 	unsigned int m_numFeatures;
 	
 	std::vector<float> generateDescriptorSet(
