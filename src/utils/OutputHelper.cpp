@@ -10,6 +10,10 @@ void printSvm(const char *s) {
 	}
 }
 
+void printLinear(const char *s) {
+	cout << s;
+}
+
 int printVlfeat(char const *format, ...) {
 	char dest[255];
 	va_list argptr;
@@ -26,6 +30,10 @@ int printVlfeat(char const *format, ...) {
 		cout << endl;
 	}
 	return 0;
+}
+
+void OutputHelper::disableOutput() {
+	cout.setstate(ios::failbit);
 }
 
 void OutputHelper::printInlineMessage(string message,

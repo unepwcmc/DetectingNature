@@ -4,7 +4,7 @@ using namespace std;
 LinearClassifier::LinearClassifier(const SettingsManager* settings,
 		vector<string> classNames) {
 		
-	//linear::set_print_string_function(&printSvm);
+	linear::set_print_string_function(&printLinear);
 	
 	m_c = settings->get<float>("classifier.c");
 	m_classNames = classNames;

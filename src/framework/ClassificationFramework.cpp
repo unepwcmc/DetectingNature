@@ -22,6 +22,10 @@ ClassificationFramework::ClassificationFramework(string datasetPath,
 	m_skipCache = skipCache;
 	m_settings = settings;
 	
+	if(!m_settings->get<bool>("framework.verbose")) {
+		OutputHelper::disableOutput();
+	}
+	
 	m_cacheHelper = new CacheHelper(datasetPath, m_settings);
 	
 	m_datasetManager = m_skipCache ?

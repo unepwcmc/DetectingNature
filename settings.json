@@ -1,4 +1,8 @@
 {
+	"framework": {
+		"verbose": true
+	},
+
 	"image": {
 		"type": "Greyscale", //Greyscale, Opponent, HSV
 		"maxResolution": 500,

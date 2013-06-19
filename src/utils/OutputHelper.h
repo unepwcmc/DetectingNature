@@ -2,6 +2,7 @@
 #define OUTPUT_HELPER_H
 
 #include <cstdarg>
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -22,6 +23,12 @@
  */
 class OutputHelper {
 public:
+
+	/**
+	 * @brief Disable all console output.
+	 */
+	static void disableOutput();
+
 	/**
 	 * @brief Prints a single message, followed by a new line.
 	 *
@@ -97,6 +104,7 @@ private:
 };
 
 void printSvm(const char *s);
+void printLinear(const char *s);
 int printVlfeat(char const *format, ...);
 
 #endif
