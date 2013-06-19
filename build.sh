@@ -1,4 +1,4 @@
 mkdir -p build
 cd build
-cmake ../src
-make
+cmake -DCMAKE_INSTALL_PREFIX:PATH=.. ../src
+make all install
