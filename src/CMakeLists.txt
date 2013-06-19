@@ -8,12 +8,15 @@ project(DetectingNature)
 cmake_policy(SET CMP0015 NEW)
 set(CMAKE_INSTALL_RPATH ".")
 set(CMAKE_CXX_FLAGS "-g -O2 -march=native -Wall -Wextra -Wno-unused-parameter -std=c++11")
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # -----------------------------------------------------------------------------
 # Locate required libraries and components
 # -----------------------------------------------------------------------------
 
 find_package(Boost 1.50.0 COMPONENTS system filesystem serialization program_options REQUIRED)
+
+find_package(CImg 1.4.9 REQUIRED)
 
 find_package(OpenMP)
 if(OPENMP_FOUND)
@@ -34,10 +37,9 @@ endif()
 # -----------------------------------------------------------------------------
 
 include_directories(
-	.
+	${PROJECT_SOURCE_DIR}
 	${Boost_INCLUDE_DIRS}
 	../libs/vlfeat-0.9.16/
-	../libs/CImg-1.5.4/
 	../libs/yael_v300/
 	../libs/gmm-fisher/
 )
