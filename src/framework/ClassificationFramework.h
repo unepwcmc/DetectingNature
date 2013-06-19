@@ -53,11 +53,22 @@ public:
 		const SettingsManager *settings, bool skipCache);
 	~ClassificationFramework();
 	
+	
 	/**
-	 * @brief Trains and tests a classifier.
+	 * @brief Trains a classifier.
+	 *
+	 * Creates the intermediate representations for all images and then trains
+	 * a classifier.
+	 */
+	void train();
+	
+	/**
+	 * @brief Tests a classifier.
 	 * 
-	 * Splits the dataset into a training and a testing set, trains the
-	 * classifier and returns the average accuracy of the classifier.
+	 * Uses a classifier on a set of testing images and returns the average
+	 * accuracy of the classifier.
+ 	 *
+	 * @pre A classifier must be trained using train()
 	 *
 	 * @return The average of the diagonal of the confusion matrix. Returned as
 	 * a percentage, between 0 and 1.
@@ -67,8 +78,10 @@ public:
 	/**
 	 * @brief Trains a classifier and predicts the class of other images.
 	 * 
-	 * Uses a subset of the dataset to train the classifier and the uses it to
-	 * predict the classes for all images in @a imagesFolder.
+	 * Uses a classifier to predict the classes for all images
+	 * in @a imagesFolder.
+	 *
+	 * @pre A classifier must be trained using train()
 	 *
 	 * @param imagesFolder The folder containing unclassified images for wich
 	 * we want to determine their class.
@@ -91,6 +104,8 @@ private:
 	
 	std::vector<std::string> m_imagePaths;
 	std::string m_cachePath;
+	
+	std::vector<Histogram*> m_trainHistograms;
 	
 	Codebook* prepareCodebook(
 		std::vector<std::string> imagePaths, bool skipCache);

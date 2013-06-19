@@ -47,6 +47,7 @@ int main(int argc, char** argv) {
 	//  - classify known pictures to get accuracy statistics
 	if(vm.count("classify")) {
 		ClassificationFramework cf(datasetPath, &settings, numRuns != 1);
+		cf.train();
 		vector<ClassificationFramework::Result> results =
 			cf.classify(vm["classify"].as<string>());
 		
@@ -62,6 +63,7 @@ int main(int argc, char** argv) {
 		double results[numRuns];
 		for(unsigned int i = 0; i < numRuns; i++) {
 			ClassificationFramework cf(datasetPath, &settings, numRuns != 1);
+			cf.train();
 			results[i] = cf.testRun();
 		}
 		

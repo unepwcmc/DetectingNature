@@ -184,12 +184,17 @@ vector<Histogram*> ClassificationFramework::generateHistograms(
 	return histograms;
 }
 
-double ClassificationFramework::testRun() {
-	vector<Histogram*> trainHistograms =
+void ClassificationFramework::train() {
+	for(unsigned int i = 0; i < m_trainHistograms.size(); i++)
+		delete m_trainHistograms[i];
+	
+	m_trainHistograms =
 		generateHistograms(m_datasetManager->getTrainData(), m_skipCache);
 
-	m_classifier->train(trainHistograms, m_datasetManager->getTrainClasses());
-	
+	m_classifier->train(m_trainHistograms, m_datasetManager->getTrainClasses());
+}
+
+double ClassificationFramework::testRun() {
 	vector<string> classNames = m_datasetManager->listClasses();
 	vector<string> imagePaths = m_datasetManager->getTestData();
 	vector<unsigned int> testClasses = m_datasetManager->getTestClasses();
@@ -228,24 +233,22 @@ double ClassificationFramework::testRun() {
 		}
 	}
 	confMat.printMatrix();
-	
-	for(unsigned int i = 0; i < trainHistograms.size(); i++)
-		delete trainHistograms[i];
 
 	return confMat.getDiagonalAverage();
 }
 
 vector<ClassificationFramework::Result> ClassificationFramework::classify(
 		string imagesFolder) {
-		
-	vector<Histogram*> trainHistograms =
-		generateHistograms(m_datasetManager->getTrainData(), m_skipCache);
-
-	m_classifier->train(trainHistograms, m_datasetManager->getTrainClasses());
-	
+			
 	vector<string> imagePaths;
-	for(directory_iterator it(imagesFolder); it != directory_iterator(); it++) {
-		imagePaths.push_back(it->path().relative_path().string());
+	if(is_directory(imagesFolder)) {
+		for(directory_iterator it(imagesFolder);
+				it != directory_iterator(); it++) {
+				
+			imagePaths.push_back(it->path().relative_path().string());
+		}
+	} else {
+		imagePaths.push_back(imagesFolder);
 	}
 	
 	Codebook* codebook = prepareCodebook(imagePaths, false);
@@ -272,9 +275,6 @@ vector<ClassificationFramework::Result> ClassificationFramework::classify(
 				imagePaths.size(), resultClass.first, resultClass.second);
 		}
 	}
-	
-	for(unsigned int i = 0; i < trainHistograms.size(); i++)
-		delete trainHistograms[i];
 
 	return results;
 }
