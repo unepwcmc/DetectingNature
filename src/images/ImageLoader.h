@@ -39,6 +39,7 @@ public:
 
 private:
 	double m_maxRes;
+	bool m_forceSize;
 	
 	virtual ImageData* processImageData(
 		cimg_library::CImg<float> image) const = 0;

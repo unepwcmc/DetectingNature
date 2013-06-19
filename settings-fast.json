@@ -1,22 +1,22 @@
 {
 	"image": {
 		"type": "Greyscale", //Greyscale, Opponent, HSV
-		"maxResolution": 500,
+		"maxResolution": 250,
 		"forceSize": false,
-		"smoothingSigma": 1.0
+		"smoothingSigma": 0.0
 	},
 	
 	"features": {
 		"type": "SIFT", //SIFT (128 dim), HOG (36 dim), LBP (8 dim)
-		"gridSpacing": [10],
-		"patchSize": [20],
+		"gridSpacing": [20],
+		"patchSize": [50],
 		"transforms": ["Hellinger"] //Hellinger
 	},
 	
 	"codebook": {
 		"type": "Fisher", //Fisher, KMeans
-		"codewords": 200,
-		"pcaDimension": 128,
+		"codewords": 10,
+		"pcaDimension": 64,
 		"textonImages": 500,
 		"totalFeatures": 500000
 	},
