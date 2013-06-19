@@ -4,6 +4,8 @@ Detecting Nature In Pictures
 Dependencies
 ---------------
 
+For the framework:
+
 * [CImg](http://cimg.sourceforge.net/) >= 1.5.4
 
 * [Boost](http://www.boost.org/) >= 1.50.0
@@ -16,10 +18,16 @@ Dependencies
 
 * [LIBLINEAR](http://www.csie.ntu.edu.tw/~cjlin/liblinear/) >= 1.8
 
+For the Ruby wrapper:
+
+* [Ruby](http://www.ruby-lang.org/) >= 1.9.1
+
+* [SWIG](http://www.swig.org/) >= 2.0.0
+
 Building
 ---------------
 
-1. Add Dataset to the `/data` folder
+1. Add Dataset to the `./data` folder
 
 2. Build with `./build.sh`
 

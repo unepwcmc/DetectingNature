@@ -13,7 +13,7 @@ set(CMAKE_CXX_FLAGS "-g -O2 -march=native -Wall -Wextra -Wno-unused-parameter -s
 # Locate required libraries and components
 # -----------------------------------------------------------------------------
 
-find_package(Boost COMPONENTS system filesystem serialization program_options REQUIRED)
+find_package(Boost 1.50.0 COMPONENTS system filesystem serialization program_options REQUIRED)
 
 find_package(OpenMP)
 if(OPENMP_FOUND)
@@ -21,9 +21,9 @@ if(OPENMP_FOUND)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-find_package(SWIG 2.0)
+find_package(SWIG 2.0.0)
 if(SWIG_FOUND)
-	find_package(Ruby REQUIRED)
+	find_package(Ruby 1.9.1 REQUIRED)
 	include(${SWIG_USE_FILE})
 	set_source_files_properties(DetectingNature.i PROPERTIES CPLUSPLUS ON)
 endif()
