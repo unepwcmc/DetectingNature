@@ -1,0 +1,38 @@
+{
+	"framework": {
+		"verbose": true
+	},
+
+	"image": {
+		"type": "Greyscale", //Greyscale, Opponent, HSV
+		"maxResolution": 500,
+		"forceSize": false,
+		"smoothingSigma": 0.0
+	},
+	
+	"features": {
+		"type": "SIFT", //SIFT (128 dim), HOG (36 dim), LBP (8 dim)
+		"gridSpacing": [20],
+		"patchSize": [50],
+		"transforms": ["Hellinger"] //Hellinger
+	},
+	
+	"codebook": {
+		"type": "Fisher", //Fisher, KMeans
+		"codewords": 50,
+		"pcaDimension": 80,
+		"textonImages": 500,
+		"totalFeatures": 500000
+	},
+	
+	"histogram": {
+		"type": "Slices", //Slices, Squares
+		"pyramidLevels": 0
+	},
+	
+	"classifier": {
+		"type": "Linear", //Linear, SVM
+		"c": 10.0,
+		"trainImagesPerClass": 100000
+	}
+}
