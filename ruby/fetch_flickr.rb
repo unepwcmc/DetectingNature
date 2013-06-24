@@ -37,14 +37,14 @@ class FlickrClassifier < Classifier
 				image_url = FlickRaw.url(image)
 			
 				puts image.id, image.latitude, image.longitude, image.accuracy, image.tags,
-					Time.at(image.dateupload.to_i).to_date.to_s, image.datetaken, image_url
+					Time.at(image.dateupload.to_i).to_s, image.datetaken, image_url
 	
 				filename, category, certainty = 
 					process_image(image.id, image_url)
 				puts filename, category, certainty, '-' * 20
 				
 				save_cartodb(image.latitude, image.longitude, category,
-					certainty, Time.at(image.dateupload.to_i).to_date.to_s,
+					certainty, Time.parse(image.datetaken).to_date.to_s,
 					image_url)
 			
 				#move_file filename, category, certainty
