@@ -21,7 +21,7 @@ class Classifier
 	end
 	
 	def save_cartodb(lat, lon, classification, probability, picture_date, url)	
-		puts `curl -v --data "api_key=#{ApiKeys::CARTODB_KEY}&q=INSERT INTO picture_classifier (the_geom, classification, picture_date, probability, url) VALUES (
+		`curl -v --data "api_key=#{ApiKeys::CARTODB_KEY}&q=INSERT INTO picture_classifier (the_geom, classification, picture_date, probability, url) VALUES (
 	ST_PointFromText('POINT(#{lon} #{lat})', 4326), '#{classification}', to_date('#{picture_date}', 'yyyy-mm-dd'), #{probability}, '#{url}')" http://carbon-tool.cartodb.com/api/v2/sql`
 	end
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'flickraw'
+require 'thread/pool'
 require 'time'
 
 require_relative 'classifier'
@@ -31,27 +32,38 @@ class FlickrClassifier < Classifier
 			:page => page)
 	end
 
-	def process_list(imagelist)
-		imagelist.each do |image|
-			begin		
-				image_url = FlickRaw.url(image)
-			
-				puts image.id, image.latitude, image.longitude, image.accuracy, image.tags,
-					Time.at(image.dateupload.to_i).to_s, image.datetaken, image_url
+	def process_one(image)
+		begin		
+			image_url = FlickRaw.url(image)
 	
-				filename, category, certainty = 
-					process_image(image.id, image_url)
-				puts filename, category, certainty, '-' * 20
-				
-				save_cartodb(image.latitude, image.longitude, category,
-					certainty, Time.parse(image.datetaken).to_date.to_s,
-					image_url)
-			
-				#move_file filename, category, certainty
-			rescue Exception => e
-				puts "Image not available (#{e.message})", '-' * 20
-			end
+			filename, category, certainty = 
+				process_image(image.id, image_url)
+	
+			puts image.id, image.latitude, image.longitude, image.accuracy,
+				image.tags, Time.at(image.dateupload.to_i).to_s,
+				image.datetaken, image_url, filename, category,
+				certainty, '-' * 20
+		
+			save_cartodb(image.latitude, image.longitude, category,
+				certainty, Time.parse(image.datetaken).to_date.to_s,
+				image_url)
+	
+			#move_file filename, category, certainty
+		rescue Exception => e
+			puts "Image not available (#{e.message})", '-' * 20
 		end
+	end
+
+	def process_list(imagelist)
+		pool = Thread.pool(20)
+		
+		imagelist.each do |thread_image|
+			pool.process(thread_image) { |image|
+				process_one image
+			}
+		end
+		
+		pool.shutdown
 	end
 
 	def process_dates(current_date, end_date)
