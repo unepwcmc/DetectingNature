@@ -239,6 +239,7 @@ double ClassificationFramework::testRun() {
 	}
 	confMat.printMatrix();
 
+	delete codebook;
 	return confMat.getDiagonalAverage();
 }
 
@@ -281,5 +282,6 @@ vector<ClassificationFramework::Result> ClassificationFramework::classify(
 		}
 	}
 
+	delete codebook;
 	return results;
 }
