@@ -6,6 +6,6 @@ framework.train
 
 results = framework.classify('data/Testing/natural')
 
-results.each { |result|
+results.each do |result|
 	puts result.filepath, result.category, result.certainty, '-' * 20
-}
+end
