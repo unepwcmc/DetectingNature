@@ -70,13 +70,18 @@ class FlickrClassifier < Classifier
 		while current_date < end_date do
 			puts "Starting with #{current_date}"
 		
-			current_page = 0
 			begin
-				current_page += 1
-				imagelist = search_flickr current_date.to_i, current_page
-				puts "Downloading page #{current_page}/#{imagelist.pages} (#{imagelist.total} images)", '-' * 20
-				process_list imagelist
-			end while current_page < imagelist.pages
+				current_page = 0
+				begin
+					current_page += 1
+					imagelist = search_flickr current_date.to_i, current_page
+					puts "Downloading page #{current_page}/#{imagelist.pages}"\
+						"(#{imagelist.total} images)", '-' * 20
+					process_list imagelist
+				end while current_page < imagelist.pages
+			rescue Exception => e
+				puts "Image list retrieval failed (#{e.message})", '-' * 20
+			end
 			
 			current_date += 600
 		end

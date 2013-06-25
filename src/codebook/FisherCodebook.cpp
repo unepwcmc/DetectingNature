@@ -35,6 +35,9 @@ Histogram* FisherCodebook::encode(ImageFeatures* imageFeatures) {
 	}
 	
 	unsigned int numFeatures = imageFeatures->getNumFeatures();
+	
+	if(!numFeatures)
+		throw std::length_error("feature vector is empty");
 
 	vector<float> pcaFeatures(numFeatures * m_pcaDim, 0.0);
 	pca_online_project(m_pca, imageFeatures->getFeatures(), &pcaFeatures[0],
