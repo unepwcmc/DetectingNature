@@ -7,13 +7,33 @@ require 'time'
 require_relative 'classifier'
 
 class FlickrClassifier < Classifier
+	@@total_threads = 1
+	@@stopping = false
+
 	def initialize
 		super 'data/flickr/'
 		FlickRaw.api_key = ApiKeys::FLICKR_KEY
 		FlickRaw.shared_secret = ApiKeys::FLICKR_SECRET
+		
+		Signal.trap('USR1') do
+			@@total_threads += 1
+			puts "Increasing thread pool size to #{@@total_threads}"
+		end
+		
+		Signal.trap('USR2') do
+			@@total_threads -= 1
+			puts "Decreasing thread pool size to #{@@total_threads}"
+		end
+		
+		Signal.trap('INT') do
+			@@stopping = true
+			puts 'Stopping classifier when current image batch is done'
+		end
 	end
 	
 	def search_flickr(min_date, page)
+		# Flickr upload date search seems to have a resolution of 10 minutes
+		# Use a multiple of 10 minutes to prevent repeated or missing images
 		max_date = min_date + 600
 
 		return flickr.photos.search(
@@ -55,7 +75,7 @@ class FlickrClassifier < Classifier
 	end
 
 	def process_list(imagelist)
-		pool = Thread.pool(20)
+		pool = Thread.pool(@@total_threads)
 		
 		imagelist.each do |thread_image|
 			pool.process(thread_image) { |image|
@@ -83,7 +103,12 @@ class FlickrClassifier < Classifier
 				puts "Image list retrieval failed (#{e.message})", '-' * 20
 			end
 			
-			current_date += 600
+			current_date += 600			
+			
+			if @@stopping
+				puts "Stopping at #{current_date}"
+				exit
+			end
 		end
 	end
 end
