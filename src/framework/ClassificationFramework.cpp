@@ -264,21 +264,26 @@ vector<ClassificationFramework::Result> ClassificationFramework::classify(
 	unsigned int currentIter = 0;
 	#pragma omp parallel for
 	for(unsigned int i = 0; i < imagePaths.size(); i++) {
-		Histogram* testHist = generateHistogram(codebook, imagePaths[i]);
-		pair<unsigned int, double> resultClass
-			= m_classifier->classify(testHist);
-		Result result;
-		result.filepath = imagePaths[i];
-		result.category = classNames[resultClass.first];
-		result.certainty = resultClass.second;
-		delete testHist;
+		try {
+			Histogram* testHist = generateHistogram(codebook, imagePaths[i]);
+			pair<unsigned int, double> resultClass
+				= m_classifier->classify(testHist);
+			Result result;
+			result.filepath = imagePaths[i];
+			result.category = classNames[resultClass.first];
+			result.certainty = resultClass.second;
+			delete testHist;
 		
-		#pragma omp critical
-		{
-			results.push_back(result);
-			currentIter++;
-			OutputHelper::printResults("Classifying image", currentIter,
-				imagePaths.size(), resultClass.first, resultClass.second);
+			#pragma omp critical
+			{
+				results.push_back(result);
+				currentIter++;
+				OutputHelper::printResults("Classifying image", currentIter,
+					imagePaths.size(), resultClass.first, resultClass.second);
+			}
+		} catch(...) {
+			OutputHelper::printMessage(
+				"Could not extract enough data from the image");
 		}
 	}
 
