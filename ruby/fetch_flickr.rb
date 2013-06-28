@@ -97,7 +97,12 @@ class FlickrClassifier < Classifier
 					imagelist = search_flickr current_date.to_i, current_page
 					puts "Downloading page #{current_page}/#{imagelist.pages}"\
 						"(#{imagelist.total} images)", '-' * 20
-					process_list imagelist
+					if imagelist.pages.to_i <= 1 or imagelist.total.to_i > 0 then
+						process_list imagelist
+					else
+						current_page -= 1
+						sleep 30
+					end
 				end while current_page < imagelist.pages
 			rescue Exception => e
 				puts "Image list retrieval failed (#{e.message})", '-' * 20
