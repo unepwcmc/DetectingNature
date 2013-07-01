@@ -4,6 +4,7 @@ using namespace std;
 CacheHelper::CacheHelper(string datasetPath, const SettingsManager* settings) {
 	m_datasetPath = datasetPath;
 	m_settings = settings;
+	m_enabled = m_settings->get<bool>("framework.cacheData");
 }
 
 // Generate a cache path. This must be different for different settings in order

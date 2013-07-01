@@ -1,6 +1,7 @@
 {
 	"framework": {
-		"verbose": true
+		"verbose": true,
+		"cacheData": true
 	},
 
 	"image": {

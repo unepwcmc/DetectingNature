@@ -44,6 +44,10 @@ public:
 	 * @return The requested data or @a nullptr if it is not cached
 	 */
 	template <typename T> T* load(std::string filename) const {
+		if(!m_enabled) {
+			return nullptr;
+		}
+			
 		std::string cacheFilename = getCacheFolder(filename, typeid(T)) +
 			boost::replace_all_copy(filename, "/", "_");
 		
@@ -67,6 +71,10 @@ public:
 	 * by the Boost Serialization library.
 	 */
 	template <typename T> void save(std::string filename, T* data) const {
+		if(!m_enabled) {
+			return;
+		}
+		
 		std::string cacheFolder = getCacheFolder(filename, typeid(T));
 		std::string cacheFilename = cacheFolder +
 			boost::replace_all_copy(filename, "/", "_");
@@ -81,6 +89,7 @@ public:
 	}
 
 private:
+	bool m_enabled;
 	std::string m_datasetPath;
 	const SettingsManager* m_settings;
 	
