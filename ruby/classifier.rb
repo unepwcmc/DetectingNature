@@ -1,8 +1,8 @@
 require 'open-uri'
 require 'fileutils'
+require 'DetectingNature'
 
 require_relative 'apikeys'
-require_relative 'DetectingNature'
 
 class Classifier
 	include DetectingNature

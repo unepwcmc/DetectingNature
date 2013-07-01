@@ -12,5 +12,6 @@ make
 cd ../..
 mkdir -p build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX:PATH=.. ../src
+mkdir -p ${1:-..}
+cmake -DCMAKE_INSTALL_PREFIX:PATH=${1:-..} ../src
 make all install

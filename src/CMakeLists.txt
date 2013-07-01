@@ -6,7 +6,7 @@ project(DetectingNature)
 # -----------------------------------------------------------------------------
 
 cmake_policy(SET CMP0015 NEW)
-set(CMAKE_INSTALL_RPATH ".")
+set(CMAKE_INSTALL_RPATH "$ORIGIN")
 set(CMAKE_CXX_FLAGS "-g -O2 -march=native -Wall -Wextra -Wno-unused-parameter -std=c++11")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
