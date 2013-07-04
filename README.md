@@ -10,10 +10,6 @@ For the framework:
 
 * [Boost](http://www.boost.org/) >= 1.50.0
 
-* [VLFeat](http://www.vlfeat.org/) >= 0.9.16
-
-* [Yael](https://gforge.inria.fr/projects/yael/) >= 300
-
 * [LIBSVM](http://www.csie.ntu.edu.tw/~cjlin/libsvm/) >= 3.12
 
 * [LIBLINEAR](http://www.csie.ntu.edu.tw/~cjlin/liblinear/) >= 1.8
