@@ -24,14 +24,19 @@ For the Ruby wrapper:
 
 * [SWIG](http://www.swig.org/) >= 2.0.0
 
-Building
+Building command-line application
 ---------------
 
-1. Add Dataset to the `./data` folder
+1. Build with `./build.sh`
 
-2. Build with `./build.sh`
+2. Run with `./DetectingNature`
 
-3. Run with `./DetectingNature`
+Building Ruby Gem
+---------------
+
+1. Create Gem with `gem build detectingnature.gemspec`
+
+2. Install with `gem install DetectingNature-X.X.X.gem`
 
 Building documentation
 ---------------
